@@ -7,11 +7,11 @@
 #   ./scripts/full-setup.sh --test       # setup + run e2e test (steps 1-4)
 #
 # Prerequisites:
-#   - .env configured with PRIVATE_KEY, INITIAL_OWNER, LANGUAGE, TUNNEL_URL
-#   - config/proxy/extension_proxy.toml configured with DB credentials
-#   - Docker running
-#   - Foundry (forge) installed for contract compilation
-#   - Go 1.23+ installed
+#   - .env with PRIVATE_KEY, INITIAL_OWNER, LANGUAGE, LOCAL_MODE=false,
+#     SIMULATED_TEE=true, EXT_PROXY_URL (or TUNNEL_URL) pointing at tunnel → :6674
+#   - config/proxy/extension_proxy.toml from coston2 example + indexer [db]
+#   - Tunnel already running (cloudflared/ngrok to localhost:6674)
+#   - Docker running, Foundry (forge), Go 1.23+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -21,10 +21,12 @@ log()  { echo -e "${GREEN}[full-setup]${NC} $*"; }
 die()  { echo -e "${RED}[full-setup] ERROR:${NC} $*" >&2; exit 1; }
 
 RUN_TESTS=false
+FORCE_PREBUILD=""
 for arg in "$@"; do
     case "$arg" in
         --test) RUN_TESTS=true ;;
-        *) die "Unknown argument: $arg" ;;
+        --force) FORCE_PREBUILD="--force" ;;
+        *) die "Unknown argument: $arg (supported: --test, --force)" ;;
     esac
 done
 
@@ -32,7 +34,7 @@ done
 echo -e "\n${CYAN}╔══════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║  Phase 1: Pre-build                  ║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════╝${NC}"
-"$SCRIPT_DIR/pre-build.sh" || die "Pre-build failed"
+"$SCRIPT_DIR/pre-build.sh" $FORCE_PREBUILD || die "Pre-build failed"
 
 # --- Phase 2: Start services (Docker Compose) ---
 echo -e "\n${CYAN}╔══════════════════════════════════════╗${NC}"

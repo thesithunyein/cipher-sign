@@ -4,7 +4,7 @@
 # Run this AFTER post-build.sh (TEE machine must be registered and running).
 #
 # Inputs (env vars):
-#   EXT_PROXY_URL       — extension proxy URL (default: http://localhost:6676)
+#   EXT_PROXY_URL       — extension proxy URL (default: http://localhost:6674)
 #   CHAIN_URL           — chain RPC URL (default: https://coston2-api.flare.network/ext/C/rpc)
 #   ADDRESSES_FILE      — path to deployed-addresses.json (auto-detected if unset)
 #   INSTRUCTION_SENDER  — deployed InstructionSender address (from config/extension.env)
@@ -33,7 +33,7 @@ if [[ -f "$CONFIG_FILE" ]]; then
     log "Loaded config from $CONFIG_FILE"
 fi
 
-EXT_PROXY_URL="${EXT_PROXY_URL:-http://localhost:6676}"
+EXT_PROXY_URL="${EXT_PROXY_URL:-${TUNNEL_URL:-http://localhost:6674}}"
 CHAIN_URL="${CHAIN_URL:-https://coston2-api.flare.network/ext/C/rpc}"
 ADDRESSES_FILE="${ADDRESSES_FILE:-}"
 # Resolve relative paths against PROJECT_DIR

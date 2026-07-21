@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # pre-build.sh — Deploy InstructionSender contract and register extension on-chain.
 #
+# Usage:
+#   ./scripts/pre-build.sh           # refuses if config/extension.env already exists
+#   ./scripts/pre-build.sh --force   # redeploy + new EXTENSION_ID (intentional only)
+#
 # Inputs (env vars, typically set in .env):
 #   ADDRESSES_FILE  — path to deployed-addresses.json (auto-detected if unset)
 #   CHAIN_URL       — chain RPC URL (default: https://coston2-api.flare.network/ext/C/rpc)
@@ -19,6 +23,14 @@ log()  { echo -e "${GREEN}[pre-build]${NC} $*"; }
 step() { echo -e "\n${CYAN}=== Step $1: $2 ===${NC}"; }
 die()  { echo -e "${RED}[pre-build] ERROR:${NC} $*" >&2; exit 1; }
 
+FORCE=false
+for arg in "$@"; do
+    case "$arg" in
+        --force) FORCE=true ;;
+        *) die "Unknown argument: $arg (only --force is supported)" ;;
+    esac
+done
+
 # --- Load .env from project root (if present) ---
 if [[ -f "$PROJECT_DIR/.env" ]]; then
     set -a
@@ -33,6 +45,14 @@ if [[ -n "$ADDRESSES_FILE" && "$ADDRESSES_FILE" != /* ]]; then
 fi
 CHAIN_URL="${CHAIN_URL:-https://coston2-api.flare.network/ext/C/rpc}"
 CONFIG_OUTPUT="$PROJECT_DIR/config/extension.env"
+
+# Guide: refuse overwrite unless --force (avoids MachineManager.TooMany / ID mismatch)
+if [[ -f "$CONFIG_OUTPUT" && "$FORCE" != "true" ]]; then
+    die "config/extension.env already exists. Re-run only with --force if you intentionally want a new extension ID (existing TEE may still be tied to the old ID)."
+fi
+if [[ "$FORCE" == "true" && -f "$CONFIG_OUTPUT" ]]; then
+    log "WARNING: --force will overwrite $CONFIG_OUTPUT with a new EXTENSION_ID"
+fi
 
 # Auto-detect addresses file
 if [[ -z "$ADDRESSES_FILE" ]]; then

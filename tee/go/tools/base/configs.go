@@ -10,7 +10,7 @@ import (
 
 const (
 	// Coston2 defaults
-	DefaultExtensionProxyURL = "http://localhost:6676"
+	DefaultExtensionProxyURL = "http://localhost:6674"
 	DefaultChainNodeURL      = "https://coston2-api.flare.network/ext/C/rpc"
 	DefaultAddressesFile     = "../../config/coston2/deployed-addresses.json"
 )

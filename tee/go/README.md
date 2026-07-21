@@ -90,13 +90,13 @@ go run ./cmd/deploy-contract
 go run ./cmd/register-extension --instructionSender 0x<address>
 
 # Add TEE version (after extension stack is running)
-go run ./cmd/allow-tee-version -p http://localhost:6676
+go run ./cmd/allow-tee-version -p http://localhost:6674
 
 # Register TEE machine (pre-reg, attest, to-production)
-go run ./cmd/register-tee -p http://localhost:6676 -l
+go run ./cmd/register-tee -p http://localhost:6674 -l
 
 # Run the end-to-end test
-go run ./cmd/run-test --instructionSender 0x<address> -p http://localhost:6676
+go run ./cmd/run-test --instructionSender 0x<address> -p http://localhost:6674
 ```
 
 ### Environment variables

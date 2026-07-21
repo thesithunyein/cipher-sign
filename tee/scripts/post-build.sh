@@ -4,12 +4,13 @@
 # Run this AFTER Docker Compose brings up the extension stack (start-services.sh).
 #
 # Inputs (env vars, typically set in .env):
-#   EXT_PROXY_URL       — extension proxy URL (default: http://localhost:6676)
+#   EXT_PROXY_URL       — public tunnel URL (preferred; alias: TUNNEL_URL)
 #   NORMAL_PROXY_URL    — normal/FTDC proxy URL (default: https://tee-proxy-coston2-1.flare.rocks)
 #   CHAIN_URL           — chain RPC URL (default: https://coston2-api.flare.network/ext/C/rpc)
 #   ADDRESSES_FILE      — path to deployed-addresses.json (auto-detected if unset)
 #   TEE_VERSION         — version string (default: v0.1.0)
-#   TUNNEL_URL          — public tunnel URL for TEE registration (read by Go tools from .env)
+#   LOCAL_MODE          — must be false on Coston2
+#   SIMULATED_TEE       — true for hackathon simulated TEE
 #   EXTENSION_OWNER_KEY — private key override for AddTeeVersion (optional)
 #   WAIT_TIMEOUT        — service wait timeout in seconds (default: 120)
 set -euo pipefail
@@ -35,7 +36,7 @@ if [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
 fi
 
-EXT_PROXY_URL="${EXT_PROXY_URL:-http://localhost:6676}"
+EXT_PROXY_URL="${EXT_PROXY_URL:-${TUNNEL_URL:-http://localhost:6674}}"
 NORMAL_PROXY_URL="${NORMAL_PROXY_URL:-https://tee-proxy-coston2-1.flare.rocks}"
 CHAIN_URL="${CHAIN_URL:-https://coston2-api.flare.network/ext/C/rpc}"
 ADDRESSES_FILE="${ADDRESSES_FILE:-}"
@@ -45,9 +46,14 @@ if [[ -n "$ADDRESSES_FILE" && "$ADDRESSES_FILE" != /* ]]; then
 fi
 TEE_VERSION="${TEE_VERSION:-v0.1.0}"
 WAIT_TIMEOUT="${WAIT_TIMEOUT:-120}"
-
-# --- Auto-detect addresses file ---
 LOCAL_MODE="${LOCAL_MODE:-false}"
+SIMULATED_TEE="${SIMULATED_TEE:-true}"
+
+if [[ "$LOCAL_MODE" == "true" ]]; then
+    echo -e "${CYAN}[post-build] WARN:${NC} LOCAL_MODE=true — guide requires false on live Coston2."
+fi
+log "SIMULATED_TEE:   $SIMULATED_TEE"
+# --- Auto-detect addresses file ---
 if [[ -z "$ADDRESSES_FILE" ]]; then
     if [[ "$LOCAL_MODE" != "true" ]]; then
         candidate="$PROJECT_DIR/config/coston2/deployed-addresses.json"
@@ -74,6 +80,10 @@ fi
 
 [[ -f "$ADDRESSES_FILE" ]] || die "Addresses file not found: $ADDRESSES_FILE"
 ADDRESSES_FILE="$(cd "$(dirname "$ADDRESSES_FILE")" && pwd)/$(basename "$ADDRESSES_FILE")"
+
+# Export tunnel URL for Go tools that still read TUNNEL_URL
+export TUNNEL_URL="${TUNNEL_URL:-$EXT_PROXY_URL}"
+export EXT_PROXY_URL
 
 log "Extension proxy: $EXT_PROXY_URL"
 log "Normal proxy:    $NORMAL_PROXY_URL"

@@ -1,10 +1,7 @@
-# Coston2 proxy config for the CipherSign extension.
+# Same as extension_proxy.coston2.toml.example (compose uses one file).
+# Kept for Flare guide naming: extension_proxy.coston2.docker.toml
 #
-# Prefer the coston2-named examples (Flare getting-started):
-#   cp config/proxy/extension_proxy.coston2.toml.example \
-#      config/proxy/extension_proxy.toml
-#
-# Then fill [db] indexer credentials from Flare Telegram support.
+# Copy either example to extension_proxy.toml before start-services.
 
 redis_port = "redis:6379"
 chain_id = 114

@@ -6,7 +6,7 @@
 # and after enabling [direct] in config/proxy/extension_proxy.toml.
 #
 # Inputs (env vars):
-#   EXT_PROXY_URL   — extension proxy URL (default: http://localhost:6676)
+#   EXT_PROXY_URL   — extension proxy URL (default: http://localhost:6674)
 #   DIRECT_API_KEY  — API key for the /direct endpoint
 set -euo pipefail
 
@@ -25,7 +25,7 @@ if [[ -f "$PROJECT_DIR/.env" ]]; then
     set +a
 fi
 
-EXT_PROXY_URL="${EXT_PROXY_URL:-http://localhost:6676}"
+EXT_PROXY_URL="${EXT_PROXY_URL:-${TUNNEL_URL:-http://localhost:6674}}"
 DIRECT_API_KEY="${DIRECT_API_KEY:-}"
 
 [[ -n "$DIRECT_API_KEY" ]] || die "DIRECT_API_KEY not set. Add it to .env or export it."

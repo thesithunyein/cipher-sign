@@ -1,8 +1,8 @@
-# Sign extension stack for Coston2.
-#
 # Copy .env.example to .env and fill in the values before running.
-# Copy config/proxy/extension_proxy.toml.example to
+# Copy config/proxy/extension_proxy.coston2.toml.example to
 #   config/proxy/extension_proxy.toml and fill in DB credentials.
+#
+# Host port 6674 = external proxy (tunnel this). See docs/SETUP.md.
 #
 # Usage:
 #   docker compose up -d
@@ -31,8 +31,9 @@ services:
       - PRIVATE_KEY=${PRIVATE_KEY:?Set PRIVATE_KEY in .env}
       - DIRECT_API_KEY=${DIRECT_API_KEY:-}
     ports:
+      # Guide tunnels to 6674 (external proxy API). Internal stays 6675.
       - "${EXT_PROXY_INTERNAL_BIND:-0.0.0.0:6675}:6663"
-      - "${EXT_PROXY_EXTERNAL_BIND:-0.0.0.0:6676}:6664"
+      - "${EXT_PROXY_EXTERNAL_BIND:-0.0.0.0:6674}:6664"
     depends_on:
       redis:
         condition: service_healthy
@@ -59,6 +60,8 @@ services:
       - EXTENSION_PORT=8883
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - MODE=1
+      - LOCAL_MODE=${LOCAL_MODE:-false}
+      - SIMULATED_TEE=${SIMULATED_TEE:-true}
     depends_on:
       ext-proxy:
         condition: service_healthy

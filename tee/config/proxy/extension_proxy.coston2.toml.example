@@ -1,10 +1,13 @@
-# Coston2 proxy config for the CipherSign extension.
+# Coston2 proxy config for CipherSign (Flare FCC getting-started aligned).
 #
-# Prefer the coston2-named examples (Flare getting-started):
+# Copy:
 #   cp config/proxy/extension_proxy.coston2.toml.example \
 #      config/proxy/extension_proxy.toml
 #
-# Then fill [db] indexer credentials from Flare Telegram support.
+# Fill [db] with Flare C-chain indexer credentials from Telegram support.
+# Working host used during Summer Signal (confirm if Flare rotates): 34.38.42.208
+#
+# docker compose mounts this file at /app/config/config.toml
 
 redis_port = "redis:6379"
 chain_id = 114
@@ -37,6 +40,7 @@ cycle_queue_response_wait = "2s"
 proposal_expiration = "120s"
 max_pending_request = 10000
 
+# POST /direct for hackathon demos (bypass waiting on full on-chain roundtrip)
 [direct]
 enable = true
 api_key_variable = "DIRECT_API_KEY"

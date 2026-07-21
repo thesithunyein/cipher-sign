@@ -1,5 +1,8 @@
 # TEE Extension Example - Private Key Manager
 
+CipherSign Coston2 runbook (ports, tunnel, `--force`): see [`docs/SETUP.md`](../docs/SETUP.md).
+Aligned with [Flare FCC getting-started](https://dev.flare.network/fcc/guides/getting-started) (tunnel → **6674**, `LOCAL_MODE=false`, `SIMULATED_TEE=true`, `develop` branches).
+
 An example TEE extension that stores a private key and signs messages with it.
 Use this as a **hackathon starter template**: clone it, modify the code to create
 your own extension, then deploy/register/test it on Coston2.
@@ -109,10 +112,13 @@ cp .env.example .env
 # Edit .env and fill in:
 #   PRIVATE_KEY       — funded Coston2 wallet private key
 #   INITIAL_OWNER     — address derived from PRIVATE_KEY
-#   LANGUAGE          — go, python, or typescript
+#   LANGUAGE          — typescript (CipherSign) / go / python
+#   LOCAL_MODE        — false on Coston2
+#   SIMULATED_TEE     — true for hackathon simulated TEE
+#   EXT_PROXY_URL     — public tunnel to host port 6674
 #   DIRECT_API_KEY    — any secret string for /direct endpoint auth
 
-cp config/proxy/extension_proxy.toml.example config/proxy/extension_proxy.toml
+cp config/proxy/extension_proxy.coston2.toml.example config/proxy/extension_proxy.toml
 # Edit config/proxy/extension_proxy.toml:
 #   [db] section      — fill in username and password for the Coston2 C-chain
 #                        indexer. The proxy requires a DB connection on startup.
@@ -122,6 +128,9 @@ cp config/proxy/extension_proxy.toml.example config/proxy/extension_proxy.toml
 > **Note**: The proxy connects to the C-chain indexer database on startup.
 > If the DB is unreachable or the credentials are wrong, the proxy will crash.
 > Make sure the `[db]` section in `extension_proxy.toml` has valid credentials.
+>
+> `pre-build.sh` refuses to overwrite an existing `config/extension.env`.
+> Use `./scripts/pre-build.sh --force` only when you intentionally want a new extension ID.
 
 ### Step 1: Deploy contract and register extension
 
@@ -151,47 +160,51 @@ docker compose up -d
 Wait for the proxy to become healthy:
 
 ```bash
-until curl -sf http://localhost:6676/info >/dev/null 2>&1; do sleep 2; done
+until curl -sf http://localhost:6674/info >/dev/null 2>&1; do sleep 2; done
 echo "Extension proxy is ready"
 ```
 
 ### Step 3: Start tunnel
 
-In a separate terminal, expose the extension proxy port (6676) to the internet:
+In a separate terminal, expose the extension proxy port (**6674**) to the internet:
 
 ```bash
 # Using cloudflared (no account required):
-cloudflared tunnel --url http://localhost:6676
+cloudflared tunnel --url http://localhost:6674
 
 # Or using ngrok:
-ngrok http 6676
+ngrok http 6674
 ```
 
 Note the public HTTPS URL and add it to `.env`:
 
 ```bash
-# Add to .env
+# Add to .env (guide name: EXT_PROXY_URL; TUNNEL_URL still works for Go tools)
+EXT_PROXY_URL="https://<your-tunnel-url>"
 TUNNEL_URL="https://<your-tunnel-url>"
 ```
 
 > **Note**: The tunnel must stay running for the entire session. If your
-> computer sleeps or restarts, restart the tunnel and update `TUNNEL_URL`
-> in `.env` with the new URL.
+> computer sleeps or restarts, restart the tunnel and update `EXT_PROXY_URL`
+> / `TUNNEL_URL` in `.env` with the new URL.
+>
+> Prefer starting the tunnel **before** `start-services` / `post-build` so
+> registration uses the public URL.
 
 ### Step 4: Add TEE version
 
 ```bash
 cd go/tools
-go run ./cmd/allow-tee-version -p http://localhost:6676
+go run ./cmd/allow-tee-version -p http://localhost:6674
 ```
 
 ### Step 5: Register the TEE machine
 
-Make sure `TUNNEL_URL` is set correctly in `.env`.
+Make sure `EXT_PROXY_URL` / `TUNNEL_URL` is set correctly in `.env`.
 
 ```bash
 cd go/tools
-go run ./cmd/register-tee -p http://localhost:6676 -l
+go run ./cmd/register-tee -p http://localhost:6674 -l
 ```
 
 The `-l` flag enables local/test mode (required when the TEE returns a test
@@ -218,7 +231,7 @@ You can also send instructions manually with curl:
 
 ```bash
 # updateKey — store an encrypted private key
-curl -X POST http://localhost:6676/direct \
+curl -X POST http://localhost:6674/direct \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $DIRECT_API_KEY" \
   -d '{
@@ -228,7 +241,7 @@ curl -X POST http://localhost:6676/direct \
   }'
 
 # sign — sign a message with the stored key
-curl -X POST http://localhost:6676/direct \
+curl -X POST http://localhost:6674/direct \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $DIRECT_API_KEY" \
   -d '{
@@ -251,10 +264,10 @@ The response is the generated Action JSON containing the action ID. Poll
 | Service            | Container port | Host port |
 | ------------------ | -------------- | --------- |
 | ext-proxy internal | 6663           | 6675      |
-| ext-proxy external | 6664           | 6676      |
+| ext-proxy external | 6664           | **6674**  |
 | redis              | 6379           | 6383      |
 
-The tunnel exposes host port 6676 (ext-proxy external) to the internet.
+The tunnel exposes host port **6674** (ext-proxy external) to the internet.
 
 ## Troubleshooting
 
@@ -287,7 +300,7 @@ complete.
 
 ### Tunnel URL changed
 
-If your tunnel restarts and the URL changes, update `TUNNEL_URL` in `.env`
+If your tunnel restarts and the URL changes, update `EXT_PROXY_URL` / `TUNNEL_URL` in `.env`
 and restart the Docker stack (`docker compose down && docker compose up -d`),
 then re-run steps 5-6 (allow-tee-version + register-tee) to register a new
 TEE machine with the new URL.
