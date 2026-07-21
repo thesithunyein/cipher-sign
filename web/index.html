@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CipherSign — Flare Confidential Compute</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <header class="top">
+      <div>
+        <p class="brand">CipherSign</p>
+        <p class="mode" id="mode">checking…</p>
+      </div>
+      <p class="meta">Flare Summer Signal · Bounty 2 · Coston2</p>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>Sign only when the policy says yes.</h1>
+        <p class="lede">
+          Private keys stay inside a Flare TEE. Recipients, caps, and expiry are
+          enforced in the enclave — not in a mutable backend.
+        </p>
+        <p class="banner" id="statusBanner">
+          Demo mode (policy mock). Live FCC on Coston2 is being updated by Flare.
+          Product logic is ready to plug into develop tee-proxy / tee-node when stable.
+        </p>
+      </section>
+
+      <section class="panel" id="policy-panel">
+        <h2>1 · Policy</h2>
+        <label>
+          Allowed recipient
+          <input id="recipient" type="text" spellcheck="false"
+            value="0x1111111111111111111111111111111111111111" />
+        </label>
+        <label>
+          Max amount (raw units)
+          <input id="maxAmount" type="text" value="1000000" />
+        </label>
+        <label>
+          Policy expires at (unix, 0 = never)
+          <input id="expiresAt" type="text" value="0" />
+        </label>
+        <button type="button" id="setPolicy">Lock policy in vault</button>
+      </section>
+
+      <section class="panel" id="intent-panel">
+        <h2>2 · Sign intent</h2>
+        <label>
+          Recipient
+          <input id="intentRecipient" type="text" spellcheck="false"
+            value="0x1111111111111111111111111111111111111111" />
+        </label>
+        <label>
+          Amount
+          <input id="intentAmount" type="text" value="500000" />
+        </label>
+        <label>
+          Deadline (unix, 0 = none)
+          <input id="intentDeadline" type="text" value="0" />
+        </label>
+        <div class="actions">
+          <button type="button" id="trySign" class="primary">Request signature</button>
+          <button type="button" id="tryBad" class="ghost">Try over-cap attack</button>
+        </div>
+      </section>
+
+      <section class="panel log-panel">
+        <h2>Vault log</h2>
+        <pre id="log" aria-live="polite">Ready. Demo mode simulates TEE policy checks locally.
+Connect live FCC after Docker + Coston2 registration.</pre>
+      </section>
+    </main>
+
+    <footer>
+      <span>Flare Confidential Compute</span>
+      <a href="https://dev.flare.network/fcc/overview" target="_blank" rel="noreferrer">docs</a>
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

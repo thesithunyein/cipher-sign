@@ -1,0 +1,34 @@
+# Dependencies & build
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Secrets & local env
+.env
+.env.local
+tee/.env
+tee/config/extension.env
+tee/config/proxy/extension_proxy.toml
+
+# Internal / scratch (not for public product)
+.superstack/
+tee/_hostbuild/
+docs/TELEGRAM*.md
+docs/PROGRESS.md
+docs/CREATE_REPO.md
+docs/WIN_PATH.md
+docs/check-ready.ps1
+
+# Unused scaffolds (product path is TypeScript)
+tee/python/
+tee/skills/
+
+# Foundry cache/artifacts
+tee/contract/cache/
+tee/contract/out/
+
+# Web
+web/node_modules/
+web/dist/
+web/src/assets/
