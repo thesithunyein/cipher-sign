@@ -21,7 +21,7 @@ Built for agent wallets, payroll bots, and OTC/escrow flows that must prove: *th
 
 ## Demo
 
-- **App:** _(paste Vercel URL after deploy)_  
+- **App:** https://cipher-sign.vercel.app  
 - **Video:** _(2-min Loom/YouTube — follow [DEMO_SCRIPT.md](DEMO_SCRIPT.md))_  
 - **Repo:** https://github.com/thesithunyein/cipher-sign  
 - **Network:** Flare Testnet Coston2 (chain id 114)  

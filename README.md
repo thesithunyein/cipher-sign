@@ -10,7 +10,7 @@ Hot wallet / bot key  →  signs anything
 CipherSign vault      →  signs only what policy allows (attested TEE)
 ```
 
-Live demo · _(deploy `web/` → paste URL)_ · [Submission](docs/SUBMISSION.md) · [Architecture](docs/ARCHITECTURE.md) · [Win checklist](docs/WIN_CHECKLIST.md)
+Live demo · [cipher-sign.vercel.app](https://cipher-sign.vercel.app) · [Submission](docs/SUBMISSION.md) · [Architecture](docs/ARCHITECTURE.md) · [Win checklist](docs/WIN_CHECKLIST.md)
 
 ## Why this wins Bounty 2
 

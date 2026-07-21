@@ -25,7 +25,7 @@ Try it (2 min):
 3) over-cap should reject
 
 Feedback welcome: what confused you / would you use this?
-Demo: <PASTE_VERCEL_OR_LOOM>
+Demo: https://cipher-sign.vercel.app
 Repo: https://github.com/thesithunyein/cipher-sign
 ```
 
