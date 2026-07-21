@@ -200,5 +200,6 @@ export function liveConfig(): { baseUrl: string; apiKey: string } | null {
   const apiKey = (import.meta as ImportMeta & { env: Record<string, string> })
     .env.VITE_DIRECT_API_KEY;
   if (!baseUrl || !apiKey) return null;
+  // Relative "/fcc" is proxied by Vite to the local TEE (avoids browser CORS).
   return { baseUrl, apiKey };
 }

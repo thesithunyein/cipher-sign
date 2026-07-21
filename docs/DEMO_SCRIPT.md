@@ -13,11 +13,13 @@ curl http://127.0.0.1:6674/info
 cd C:\Users\sithu\Projects\cipher-sign\web
 npm run live:smoke
 
-# 3) Live UI
+# 3) Live UI (Vite proxies /fcc → TEE :6674 — no CORS)
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173** (or the Vite URL). Status should say **Live TEE connected**.
+Open **http://127.0.0.1:5173**. Status should say **Live TEE connected**.
+
+If you see `NetworkError when attempting to fetch resource`, you are hitting `:6674` from the browser without the proxy — use `VITE_DIRECT_URL=/fcc` (see `.env.example`) and restart `npm run dev`.
 
 Also open a second tab ready:
 
