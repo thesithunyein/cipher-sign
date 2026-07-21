@@ -18,9 +18,11 @@ function env(key) {
   return m[1].trim().replace(/^["']|["']$/g, "");
 }
 
+// Prefer localhost for record/smoke; ignore stale tunnel URLs in tee/.env unless EXT_PROXY_URL is exported.
+const fromEnv = env("EXT_PROXY_URL");
 const BASE = (
   process.env.EXT_PROXY_URL ||
-  env("EXT_PROXY_URL") ||
+  (fromEnv && !/trycloudflare|ngrok|REPLACE/i.test(fromEnv) ? fromEnv : "") ||
   "http://127.0.0.1:6674"
 ).replace(/\/$/, "");
 const API_KEY = process.env.DIRECT_API_KEY || env("DIRECT_API_KEY");
