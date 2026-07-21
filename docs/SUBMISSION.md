@@ -22,11 +22,11 @@ Built for agent wallets, payroll bots, and OTC/escrow flows that must prove: *th
 ## Demo
 
 - **App:** https://cipher-sign.vercel.app  
-- **Video:** _(2-min Loom/YouTube — follow [DEMO_SCRIPT.md](DEMO_SCRIPT.md))_  
+- **Video:** _(≤1:30 screen record + voice — follow [DEMO_SCRIPT.md](DEMO_SCRIPT.md); record local live TEE)_  
 - **Repo:** https://github.com/thesithunyein/cipher-sign  
 - **Network:** Flare Testnet Coston2 (chain id 114)  
 
-**Note for judges:** Live FCC stack is running on Coston2 with simulated TEE (`SIMULATED_TEE=true`, `CHAIN_ID=114`). Policy-gated `KEY/UPDATE` → `SET_POLICY` → `SIGN` is proven via `/direct` (`npm run live:smoke`). The public Vercel URL uses live mode when `VITE_DIRECT_*` points at a tunnel; otherwise the UI falls back to the same policy rules locally for browsing.
+**Note for judges:** Policy-gated `KEY/UPDATE` → `SET_POLICY` → `SIGN` is proven live via FCC `/direct` on Coston2 (`SIMULATED_TEE=true`, `CHAIN_ID=114`; see `npm run live:smoke`). The public Vercel app lets anyone try the same policy UX; point `VITE_DIRECT_*` at a tunnel for hosted live mode.
 
 ## How it uses Flare
 
