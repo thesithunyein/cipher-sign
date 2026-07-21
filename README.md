@@ -2,65 +2,91 @@
 
 **Flare Summer Signal — Bounty 2: Confidential Compute Apps**
 
-Policy-gated confidential signing vault on Flare Confidential Compute (FCC).  
-A private key lives inside a TEE. Signatures only release when an on-chain-triggered policy passes (recipient allowlist, spend cap, expiry).
+Policy-gated confidential signing on Flare Confidential Compute (FCC).  
+A private key lives inside a TEE. Signatures only release when policy passes **inside the enclave** — recipient allowlist, spend cap, expiry.
 
-> Build useful. Ship real. Target: working Coston2 demo before Aug 14, 2026.
+```
+Hot wallet / bot key  →  signs anything
+CipherSign vault      →  signs only what policy allows (attested TEE)
+```
 
-## Status (Jul 21, 2026)
+Live demo · _(deploy `web/` → paste URL)_ · [Submission](docs/SUBMISSION.md) · [Architecture](docs/ARCHITECTURE.md) · [Win checklist](docs/WIN_CHECKLIST.md)
 
-Flare is updating FCC on Coston2 (guides being reworked). Their guidance:
+## Why this wins Bounty 2
 
-- Mock missing components and prepare integration (couple of days)
-- Get people testing the product and gather feedback
+| Judge lens | CipherSign |
+|---|---|
+| **Useful product** | Real problem: agent / bot / payroll keys that must not be hot wallets |
+| **Flare-native** | `InstructionSender` → `TeeExtensionRegistry` → CipherSign extension in TEE |
+| **Technical depth** | New `SET_POLICY` op + ABI intent checks + ECDSA only after gate |
+| **Evidence** | 28/28 unit tests · Coston2 contract deployed · judge demo UI |
+| **Future** | Agent SDK · multi-recipient · PMW / XRPL outbound when FCC matures |
 
-**CipherSign now:** demo/mock UI + policy logic + unit tests + Coston2 `InstructionSender` deployed. Live TEE stack waits on stable `develop` tee-proxy/tee-node (signature issue under discussion with Flare).
+This is not a “privacy DB” wrapper. Removing Flare removes the **attested TEE + registry** trust model.
+
+## Proof on Coston2
 
 | Item | Value |
 |------|-------|
-| Network | Coston2 (114) |
+| Network | Flare Testnet Coston2 (`114`) |
 | InstructionSender | [`0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9`](https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9) |
-| EXTENSION_ID | `0x…0665` |
-| Repo | https://github.com/thesithunyein/cipher-sign |
+| EXTENSION_ID | `0x0000000000000000000000000000000000000000000000000000000000000665` |
+| Deployer | `0xc73Be03499616FFaA79315673e620AACfbb920C4` |
+| Tests | `cd tee/typescript && npm test` → **28/28 pass** |
 
-## Why this can win
+## What we built (new work)
 
-| Judge lens | How CipherSign scores |
-|---|---|
-| Product usefulness | Real problem: hot keys / bot wallets sign anything; CipherSign enforces policy in TEE |
-| Flare integration | Uses FCC extensions + InstructionSender + Coston2 TEE registration (not a fake “privacy” DB) |
-| Technical execution | Official `fce-direct-sign` scaffold + TypeScript handlers + demo UI |
-| Evidence of new work | Policy ops, product UI, submission pack — beyond Hello World |
-| Future potential | Agent wallets, payroll, OTC escrow, XRPL PMW-style flows |
+On top of Flare’s `fce-direct-sign` scaffold:
+
+1. **`KEY/SET_POLICY`** — ABI `(address, uint256 maxAmount, uint256 expiresAt)`
+2. **Gated `KEY/SIGN`** — rejects wrong recipient, over-cap, expired policy/intent
+3. **Product demo UI** — mock policy sim now; live `POST /direct` when FCC is up
+4. **Judge pack** — architecture, Loom script, DoraHacks submission draft, feedback loop
+
+## Try the demo (2 minutes)
+
+```bash
+cd web && npm install && npm run dev
+```
+
+1. Lock policy (recipient + max amount)  
+2. Request signature → pass  
+3. **Try over-cap attack** → reject  
+
+Feedback template: [docs/FEEDBACK.md](docs/FEEDBACK.md)
+
+## How Flare FCC is used
+
+```
+Client / bot
+    ↓  SET_POLICY / SIGN
+InstructionSender.sol  (Coston2)
+    ↓
+TeeExtensionRegistry
+    ↓
+CipherSign extension (TypeScript, inside TEE)
+    ↓  policy OK?
+ECDSA signature returned
+```
+
+Hackathon-reliable path: TEE proxy `POST /direct` (Flare guidance).  
+Full local stack: [docs/SETUP.md](docs/SETUP.md) — use **`develop`** for `tee-proxy` / `tee-node`.
 
 ## Repo layout
 
 ```
 cipher-sign/
-  tee/                 # FCC extension (from Flare fce-direct-sign, customized)
-  web/                 # Demo UI (Vite) — mock now, live /direct when FCC is up
-  docs/                # Setup, architecture, submission, feedback
+  tee/typescript/   # CipherSign handlers (product logic)
+  tee/contract/     # InstructionSender.sol
+  tee/scripts/      # FCC full-setup helpers
+  web/              # Judge / tester demo
+  docs/             # Architecture, setup, submission
 ```
 
-## Try the demo UI
+## Status (honest)
 
-```bash
-cd web
-npm install
-npm run dev
-```
-
-1. Lock policy  
-2. Request signature (pass)  
-3. Over-cap attack (reject)  
-
-Feedback template: [docs/FEEDBACK.md](docs/FEEDBACK.md)
-
-## Live TEE (when Coston2 FCC is stable)
-
-See [docs/SETUP.md](docs/SETUP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).  
-Use Flare’s current advice: **`develop`** branches for `tee-proxy` and `tee-node`.
+Flare is refreshing FCC on Coston2. Product policy logic + UI + contract are ready; live TEE attach follows when `develop` stack is stable. Demo mode uses the **same policy rules** as the extension so testers and judges can evaluate the product now.
 
 ## License
 
-MIT — extension scaffold portions © Flare Foundation (see `tee/`).
+MIT — see [LICENSE](LICENSE). Upstream FCC scaffold portions © Flare Foundation.

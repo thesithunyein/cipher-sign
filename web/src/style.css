@@ -1,12 +1,13 @@
 :root {
-  --bg0: #0a0608;
-  --bg1: #1a0c10;
-  --ink: #f4ebe6;
-  --muted: #a8948c;
-  --accent: #e8334a;
+  --bg0: #08070a;
+  --bg1: #121018;
+  --ink: #f2efe8;
+  --muted: #9a9488;
+  --accent: #e24a35;
+  --accent-dim: #9a2f22;
   --ok: #3dcf8e;
   --bad: #ff6b6b;
-  --line: rgba(244, 235, 230, 0.12);
+  --line: rgba(242, 239, 232, 0.12);
   --font-display: "Syne", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
@@ -21,9 +22,9 @@ body {
   min-height: 100%;
   color: var(--ink);
   background:
-    radial-gradient(1200px 600px at 10% -10%, #4a1020 0%, transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, #1e2a4a 0%, transparent 50%),
-    linear-gradient(165deg, var(--bg0), var(--bg1) 45%, #12080c);
+    radial-gradient(1000px 520px at 8% -8%, #3a1814 0%, transparent 55%),
+    radial-gradient(800px 480px at 100% 0%, #1a2438 0%, transparent 48%),
+    linear-gradient(168deg, var(--bg0), var(--bg1) 50%, #0c0a10);
   font-family: var(--font-mono);
 }
 
@@ -31,7 +32,7 @@ body {
   pointer-events: none;
   position: fixed;
   inset: 0;
-  opacity: 0.05;
+  opacity: 0.045;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   z-index: 0;
 }
@@ -55,14 +56,8 @@ footer {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   letter-spacing: -0.03em;
-}
-
-.meta {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.75rem;
 }
 
 .mode {
@@ -72,17 +67,41 @@ footer {
   letter-spacing: 0.02em;
 }
 
+.nav {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+}
+
+.nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.nav a:hover {
+  color: var(--ink);
+}
+
 main {
-  max-width: 720px;
+  max-width: 740px;
   margin: 0 auto;
   padding: 2rem 1.25rem 4rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.6rem;
+  color: var(--accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: rise 0.6s ease-out both;
 }
 
 .hero h1 {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(2rem, 5vw, 3rem);
-  line-height: 1.05;
+  font-size: clamp(2.05rem, 5.2vw, 3.15rem);
+  line-height: 1.04;
   letter-spacing: -0.04em;
   margin: 0 0 0.75rem;
   animation: rise 0.7s ease-out both;
@@ -97,11 +116,10 @@ main {
 }
 
 .banner {
-  margin: 0 0 2rem;
+  margin: 0 0 1.5rem;
   padding: 0.85rem 1rem;
-  border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.28);
   color: var(--muted);
   font-size: 0.78rem;
   line-height: 1.5;
@@ -109,17 +127,147 @@ main {
   animation: rise 0.7s ease-out 0.12s both;
 }
 
-.panel {
+.banner code {
+  color: var(--ink);
+  font-size: 0.72rem;
+}
+
+.proof {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin: 0 0 2rem;
+  padding: 1rem 0;
   border-top: 1px solid var(--line);
-  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--line);
+  animation: rise 0.7s ease-out 0.14s both;
+}
+
+.proof .k {
+  display: block;
+  color: var(--muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.proof .v {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.proof a.v {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.scenarios {
+  margin-bottom: 1.5rem;
   animation: rise 0.7s ease-out 0.16s both;
 }
 
-.panel h2 {
+.scenarios h2,
+.log-panel h2 {
   font-family: var(--font-display);
   font-size: 1rem;
-  margin: 0 0 1rem;
+  margin: 0 0 0.85rem;
   letter-spacing: -0.02em;
+}
+
+.scenario-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.scenario {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.scenario:hover {
+  color: var(--ink);
+  border-color: rgba(242, 239, 232, 0.28);
+}
+
+.scenario.active {
+  color: var(--ink);
+  border-color: var(--accent);
+  background: rgba(226, 74, 53, 0.12);
+}
+
+.scenario-hint {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.flow {
+  display: grid;
+  gap: 0;
+  animation: rise 0.7s ease-out 0.18s both;
+}
+
+.step {
+  border-top: 1px solid var(--line);
+  padding: 1.35rem 0;
+}
+
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.step-head .n {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--line);
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.step-head h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin: 0;
+  flex: 1;
+  letter-spacing: -0.02em;
+}
+
+.step-head .state {
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.step-head .state.locked {
+  color: var(--ok);
+}
+
+.step-head .state.pass {
+  color: var(--ok);
+}
+
+.step-head .state.fail {
+  color: var(--bad);
 }
 
 label {
@@ -154,7 +302,9 @@ input:focus {
   margin-top: 0.5rem;
 }
 
-button {
+button#setPolicy,
+button#trySign,
+button#tryBad {
   border: 1px solid var(--accent);
   background: var(--accent);
   color: #fff;
@@ -165,12 +315,14 @@ button {
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-button:hover {
+button#setPolicy:hover,
+button#trySign:hover,
+button#tryBad:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
 }
 
-button.ghost {
+button#tryBad.ghost {
   background: transparent;
   color: var(--ink);
   border-color: var(--line);
@@ -178,6 +330,13 @@ button.ghost {
 
 button.primary {
   min-width: 10rem;
+}
+
+.log-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 1.5rem;
+  margin-top: 0.5rem;
+  animation: rise 0.7s ease-out 0.2s both;
 }
 
 .log-panel pre {
@@ -205,6 +364,8 @@ button.primary {
 footer {
   display: flex;
   justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
   padding: 1rem 1.5rem 2rem;
   color: var(--muted);
   font-size: 0.72rem;
@@ -213,6 +374,12 @@ footer {
 
 footer a {
   color: var(--ink);
+  text-decoration: none;
+  margin-left: 0.85rem;
+}
+
+footer a:hover {
+  text-decoration: underline;
 }
 
 @keyframes rise {
@@ -226,9 +393,13 @@ footer a {
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .top {
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.5rem;
+  }
+
+  .proof {
+    grid-template-columns: 1fr;
   }
 }

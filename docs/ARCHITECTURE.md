@@ -1,4 +1,4 @@
-# CipherSign architecture (judge-facing)
+# CipherSign architecture
 
 ## One-liner
 
@@ -11,7 +11,7 @@ Confidential signing vault: keys stay in a Flare TEE; signatures only release wh
 | `InstructionSender.sol` | On-chain entry: `updateKey`, `setPolicy`, `sign` |
 | Flare `TeeExtensionRegistry` | Routes instructions to registered TEE machines |
 | CipherSign extension (TypeScript) | Runs in TEE; enforces policy before ECDSA |
-| `/direct` API | Hackathon-reliable path (bypasses waiting on full on-chain roundtrip for demos) |
+| `/direct` API | Hackathon-reliable path for demos |
 
 Removing Flare removes the **attested TEE + registry** trust model. A normal server can silently change policy or exfiltrate keys.
 
@@ -22,15 +22,24 @@ Removing Flare removes the **attested TEE + registry** trust model. A normal ser
 3. `KEY` / `SIGN` — ABI intent `(address, uint256 amount, uint256 deadline, bytes32 payloadHash)`  
    - Rejects if no key, no policy, expired, wrong recipient, or amount > max  
 
+## Threat model (what we stop)
+
+| Attack | Result |
+|--------|--------|
+| Bot requests over-cap transfer | `SIGN` rejected in enclave |
+| Wrong recipient | Rejected |
+| Expired policy / deadline | Rejected |
+| Attacker changes “policy” on a normal API | N/A — policy lives in TEE memory for the registered extension |
+
 ## Networks
 
-- **Demo / hackathon:** Coston2 (`114`)  
+- **Hackathon:** Coston2 (`114`)  
 - **Later:** Songbird / Flare when FCC production TEEs are available  
 
 ## Trust assumptions (honest)
 
-- Demo uses Flare’s simulated local TEE stack against Coston2 (official hackathon path).  
-- Encrypted key delivery to TEEs is demo-grade; production should use Flare’s recommended secret channels.  
+- Demo UI can run in mock mode with identical policy rules while Coston2 FCC stabilizes.  
+- Encrypted key delivery follows Flare’s demo path; production should use Flare’s recommended secret channels.  
 - Policy is enforced in extension memory for the running TEE instance.
 
 ## Repo map
@@ -38,6 +47,6 @@ Removing Flare removes the **attested TEE + registry** trust model. A normal ser
 ```
 tee/typescript/src/app/   # CipherSign handlers (product logic)
 tee/contract/             # InstructionSender
-web/                      # Judge demo UI (demo + live /direct)
-docs/                     # Setup, submission, Telegram request
+web/                      # Judge / tester demo
+docs/                     # Setup + submission
 ```
