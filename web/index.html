@@ -1,13 +1,15 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta
       name="description"
       content="CipherSign — confidential signing on Flare. Keys in a TEE. Sign only when policy allows."
     />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="dark light" />
     <title>CipherSign</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,20 +18,48 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (() => {
+        const saved = localStorage.getItem("cs-theme");
+        const theme =
+          saved === "light" || saved === "dark"
+            ? saved
+            : matchMedia("(prefers-color-scheme: light)").matches
+              ? "light"
+              : "dark";
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
   </head>
   <body>
     <header class="nav">
       <a class="logo" href="/">
         <img src="/favicon.svg" width="22" height="21" alt="" />
-        CipherSign
+        <span>CipherSign</span>
       </a>
-      <a
-        class="nav-link"
-        href="https://github.com/thesithunyein/cipher-sign"
-        target="_blank"
-        rel="noreferrer"
-        >GitHub</a
-      >
+      <div class="nav-actions">
+        <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Theme">
+          <svg class="icon sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.7" />
+            <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.1 5.1l1.6 1.6M17.3 17.3l1.6 1.6M5.1 18.9l1.6-1.6M17.3 6.7l1.6-1.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+          </svg>
+          <svg class="icon moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19.5 13.3A7.5 7.5 0 1 1 10.7 4.5 6.2 6.2 0 0 0 19.5 13.3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <a
+          class="icon-btn"
+          href="https://github.com/thesithunyein/cipher-sign"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="GitHub"
+          title="GitHub"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.4-1-.9-1.3-.9-1.3-.8-.5.1-.5.1-.5.9.1 1.3.9 1.3.9.8 1.3 2 1 2.5.7.1-.6.3-.9.5-1.1-2.2-.3-4.5-1.1-4.5-5a3.9 3.9 0 0 1 1-2.7c-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.3 9.3 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.3 4.7-4.5 5 .3.3.6.8.6 1.6v2.4c0 .3.2.6.7.5A10 10 0 0 0 12 2Z" />
+          </svg>
+        </a>
+      </div>
     </header>
 
     <main>
@@ -43,63 +73,123 @@
 
       <section class="app" aria-label="Vault">
         <div class="segment" role="tablist" aria-label="Use case">
-          <button type="button" class="seg active" data-scenario="payroll" role="tab" aria-selected="true">Payroll</button>
-          <button type="button" class="seg" data-scenario="otc" role="tab" aria-selected="false">OTC</button>
-          <button type="button" class="seg" data-scenario="treasury" role="tab" aria-selected="false">Treasury</button>
+          <button type="button" class="seg active" data-scenario="payroll" role="tab" aria-selected="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M4 7h16M4 12h10M4 17h7" /></svg>
+            Payroll
+          </button>
+          <button type="button" class="seg" data-scenario="otc" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12v10H6z" /></svg>
+            OTC
+          </button>
+          <button type="button" class="seg" data-scenario="treasury" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M3 10 12 4l9 6v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" /><path fill="none" stroke="currentColor" stroke-width="1.7" d="M9 20v-6h6v6" /></svg>
+            Treasury
+          </button>
         </div>
 
         <div class="panel">
           <div class="panel-top">
-            <h2>Policy</h2>
+            <h2>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M7 11V8a5 5 0 0 1 10 0v3" /><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
+              Policy
+            </h2>
             <span class="chip" id="policyChip">Unlocked</span>
           </div>
+
           <label>
             Allowed recipient
-            <input id="recipient" type="text" spellcheck="false" autocomplete="off"
-              value="0x1111111111111111111111111111111111111111" />
+            <div class="field">
+              <input id="recipient" type="text" spellcheck="false" autocomplete="off"
+                value="0x1111111111111111111111111111111111111111" />
+              <button type="button" class="field-btn" id="copyRecipient" title="Copy" aria-label="Copy recipient">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" /><path fill="none" stroke="currentColor" stroke-width="1.7" d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+              </button>
+            </div>
           </label>
+
           <div class="row">
             <label>
               Max amount
               <input id="maxAmount" type="text" inputmode="numeric" value="1000000" />
+              <span class="hint" id="maxHint">1,000,000</span>
             </label>
             <label>
               Expires
               <input id="expiresAt" type="text" inputmode="numeric" value="0" />
+              <span class="hint">0 = never</span>
             </label>
           </div>
-          <button type="button" id="setPolicy" class="btn">Lock policy</button>
+
+          <div class="presets" aria-label="Expiry presets">
+            <button type="button" class="preset" data-expire="0">Never</button>
+            <button type="button" class="preset" data-expire="3600">1 hour</button>
+            <button type="button" class="preset" data-expire="86400">24 hours</button>
+          </div>
+
+          <button type="button" id="setPolicy" class="btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M7 11V8a5 5 0 0 1 10 0v3" /><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8" /></svg>
+            Lock policy
+          </button>
         </div>
 
         <div class="panel">
           <div class="panel-top">
-            <h2>Request</h2>
+            <h2>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="m5 12 5 5L20 7" /></svg>
+              Request
+            </h2>
             <span class="chip" id="signChip">Waiting</span>
           </div>
+
           <label>
             Recipient
-            <input id="intentRecipient" type="text" spellcheck="false" autocomplete="off"
-              value="0x1111111111111111111111111111111111111111" />
+            <div class="field">
+              <input id="intentRecipient" type="text" spellcheck="false" autocomplete="off"
+                value="0x1111111111111111111111111111111111111111" />
+              <button type="button" class="field-btn" id="matchRecipient" title="Match policy" aria-label="Match policy recipient">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M7 7h7v7M17 17H10V10" /></svg>
+              </button>
+            </div>
           </label>
+
           <div class="row">
             <label>
               Amount
               <input id="intentAmount" type="text" inputmode="numeric" value="500000" />
+              <span class="hint" id="amountHint">500,000</span>
             </label>
             <label>
               Deadline
               <input id="intentDeadline" type="text" inputmode="numeric" value="0" />
+              <span class="hint">0 = none</span>
             </label>
           </div>
+
           <div class="actions">
-            <button type="button" id="trySign" class="btn" disabled>Sign</button>
-            <button type="button" id="tryBad" class="btn quiet" disabled>Overspend</button>
+            <button type="button" id="trySign" class="btn" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M4 12h12M12 6l6 6-6 6" /></svg>
+              Sign
+            </button>
+            <button type="button" id="tryBad" class="btn quiet" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M12 8v5M12 16.5v.5M5.2 19h13.6L12 5z" /></svg>
+              Overspend
+            </button>
           </div>
         </div>
 
         <div class="status" id="status" data-kind="idle">
-          <strong id="statusTitle">Ready</strong>
-          <span id="statusBody">Lock a policy, then sign — or try an overspend.</span>
+          <div class="status-icon" aria-hidden="true">
+            <svg class="i-idle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
+            <svg class="i-ok" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="m6.5 12.5 3.5 3.5 7.5-8" /></svg>
+            <svg class="i-bad" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="m8 8 8 8M16 8l-8 8" /></svg>
+          </div>
+          <div>
+            <strong id="statusTitle">Ready</strong>
+            <span id="statusBody">Lock a policy, then sign.</span>
+          </div>
+          <button type="button" class="field-btn ghost" id="copySig" hidden title="Copy signature" aria-label="Copy signature">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" /><path fill="none" stroke="currentColor" stroke-width="1.7" d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+          </button>
         </div>
       </section>
     </main>
@@ -114,6 +204,7 @@
       >
     </footer>
 
+    <div class="toast" id="toast" hidden></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

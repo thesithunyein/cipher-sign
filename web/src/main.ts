@@ -41,6 +41,8 @@ const ERRORS: Record<string, string> = {
 };
 
 let policy: Policy | null = null;
+let lastSig = "";
+let toastTimer = 0;
 
 const policyChip = document.querySelector<HTMLElement>("#policyChip")!;
 const signChip = document.querySelector<HTMLElement>("#signChip")!;
@@ -50,12 +52,37 @@ const statusBody = document.querySelector<HTMLElement>("#statusBody")!;
 const setPolicyBtn = document.querySelector<HTMLButtonElement>("#setPolicy")!;
 const trySignBtn = document.querySelector<HTMLButtonElement>("#trySign")!;
 const tryBadBtn = document.querySelector<HTMLButtonElement>("#tryBad")!;
+const copySigBtn = document.querySelector<HTMLButtonElement>("#copySig")!;
+const toastEl = document.querySelector<HTMLElement>("#toast")!;
+const themeToggle = document.querySelector<HTMLButtonElement>("#themeToggle")!;
+const maxHint = document.querySelector<HTMLElement>("#maxHint")!;
+const amountHint = document.querySelector<HTMLElement>("#amountHint")!;
 const live = liveConfig();
+
+function toast(message: string) {
+  toastEl.hidden = false;
+  toastEl.textContent = message;
+  toastEl.classList.add("show");
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => toastEl.classList.remove("show"), 1800);
+}
+
+function setTheme(theme: "light" | "dark") {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem("cs-theme", theme);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", theme === "light" ? "#f5f5f7" : "#000000");
+}
+
+function currentTheme(): "light" | "dark" {
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+}
 
 function setStatus(kind: "idle" | "ok" | "bad", title: string, body: string) {
   statusEl.dataset.kind = kind;
   statusTitle.textContent = title;
   statusBody.textContent = body;
+  copySigBtn.hidden = !(kind === "ok" && lastSig);
 }
 
 function sync() {
@@ -64,12 +91,38 @@ function sync() {
   tryBadBtn.disabled = !ready;
 }
 
+function fmt(raw: string) {
+  try {
+    return BigInt(raw || "0").toLocaleString("en-US");
+  } catch {
+    return "—";
+  }
+}
+
+function refreshHints() {
+  maxHint.textContent = fmt(
+    document.querySelector<HTMLInputElement>("#maxAmount")!.value
+  );
+  amountHint.textContent = fmt(
+    document.querySelector<HTMLInputElement>("#intentAmount")!.value
+  );
+}
+
 function isAddress(value: string): value is `0x${string}` {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
 function short(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
+async function copyText(text: string, okMsg: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(okMsg);
+  } catch {
+    toast("Copy failed");
+  }
 }
 
 function readPolicy(): Policy {
@@ -129,14 +182,23 @@ function applyScenario(id: string) {
   document.querySelector<HTMLInputElement>("#maxAmount")!.value = s.maxAmount;
   document.querySelector<HTMLInputElement>("#intentAmount")!.value =
     s.intentAmount;
+  document.querySelector<HTMLInputElement>("#expiresAt")!.value = "0";
+  document.querySelectorAll(".preset").forEach((p) => p.classList.remove("active"));
+  document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
   policy = null;
+  lastSig = "";
   policyChip.textContent = "Unlocked";
   policyChip.className = "chip";
   signChip.textContent = "Waiting";
   signChip.className = "chip";
+  refreshHints();
   sync();
   setStatus("idle", "Ready", "Lock a policy, then sign.");
 }
+
+themeToggle.addEventListener("click", () => {
+  setTheme(currentTheme() === "dark" ? "light" : "dark");
+});
 
 document.querySelectorAll<HTMLButtonElement>(".seg").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -149,6 +211,37 @@ document.querySelectorAll<HTMLButtonElement>(".seg").forEach((btn) => {
     applyScenario(btn.dataset.scenario || "payroll");
   });
 });
+
+document.querySelectorAll<HTMLButtonElement>(".preset").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const seconds = Number(btn.dataset.expire || "0");
+    const value =
+      seconds === 0 ? "0" : String(Math.floor(Date.now() / 1000) + seconds);
+    document.querySelector<HTMLInputElement>("#expiresAt")!.value = value;
+    document.querySelectorAll(".preset").forEach((p) => p.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+document.querySelector("#copyRecipient")!.addEventListener("click", () => {
+  void copyText(
+    document.querySelector<HTMLInputElement>("#recipient")!.value,
+    "Address copied"
+  );
+});
+
+document.querySelector("#matchRecipient")!.addEventListener("click", () => {
+  const from = document.querySelector<HTMLInputElement>("#recipient")!.value;
+  document.querySelector<HTMLInputElement>("#intentRecipient")!.value = from;
+  toast("Matched policy recipient");
+});
+
+copySigBtn.addEventListener("click", () => {
+  if (lastSig) void copyText(lastSig, "Signature copied");
+});
+
+document.querySelector("#maxAmount")!.addEventListener("input", refreshHints);
+document.querySelector("#intentAmount")!.addEventListener("input", refreshHints);
 
 setPolicyBtn.addEventListener("click", async () => {
   const input = document.querySelector<HTMLInputElement>("#recipient")!;
@@ -176,14 +269,18 @@ setPolicyBtn.addEventListener("click", async () => {
       }
     }
     policy = next;
+    lastSig = "";
     policyChip.textContent = "Locked";
     policyChip.className = "chip ok";
+    signChip.textContent = "Waiting";
+    signChip.className = "chip";
     sync();
     setStatus(
       "ok",
       "Policy locked",
       `${short(next.allowedRecipient)} · max ${next.maxAmount.toLocaleString("en-US")}`
     );
+    toast("Policy locked");
   } catch (e) {
     setStatus("bad", "Error", String(e));
   } finally {
@@ -220,20 +317,24 @@ trySignBtn.addEventListener("click", async () => {
         originalMessage: encodeIntent(intent),
       });
       if (res.status !== 1) {
+        lastSig = "";
         signChip.textContent = "Rejected";
         signChip.className = "chip bad";
         setStatus("bad", "Blocked", res.log ?? "Request rejected.");
         return;
       }
+      lastSig = res.data ?? "";
       signChip.textContent = "Approved";
       signChip.className = "chip ok";
       setStatus("ok", "Signed", "TEE approved this request.");
+      toast("Signed");
       return;
     }
 
     if (!policy) return;
     const err = check(policy, intent);
     if (err) {
+      lastSig = "";
       signChip.textContent = "Rejected";
       signChip.className = "chip bad";
       setStatus("bad", "Blocked", ERRORS[err] ?? err);
@@ -242,14 +343,17 @@ trySignBtn.addEventListener("click", async () => {
 
     const hex = encodeIntent(intent);
     const sig = fakeSig(hex);
+    lastSig = sig;
     signChip.textContent = "Approved";
     signChip.className = "chip ok";
     setStatus(
       "ok",
       "Signed",
-      `${intent.amount.toLocaleString("en-US")} → ${short(intent.recipient)} · ${sig.slice(0, 12)}…`
+      `${intent.amount.toLocaleString("en-US")} → ${short(intent.recipient)}`
     );
+    toast("Signed");
   } catch (e) {
+    lastSig = "";
     signChip.textContent = "Error";
     signChip.className = "chip bad";
     setStatus("bad", "Error", String(e));
@@ -266,7 +370,18 @@ tryBadBtn.addEventListener("click", () => {
   document.querySelector<HTMLInputElement>("#intentAmount")!.value = (
     max + 1n
   ).toString();
+  refreshHints();
   trySignBtn.click();
 });
 
+window
+  .matchMedia("(prefers-color-scheme: light)")
+  .addEventListener("change", (e) => {
+    if (!localStorage.getItem("cs-theme")) {
+      setTheme(e.matches ? "light" : "dark");
+    }
+  });
+
+document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
+refreshHints();
 sync();
