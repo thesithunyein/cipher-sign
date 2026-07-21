@@ -1,4 +1,4 @@
-# DoraHacks submission — CipherSign
+# <img src="logo.svg" alt="" width="28" height="27" /> DoraHacks submission — CipherSign
 
 ## Project name
 

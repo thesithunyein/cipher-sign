@@ -1,4 +1,4 @@
-# CipherSign
+# <img src="docs/logo.svg" alt="" width="36" height="34" /> CipherSign
 
 **Flare Summer Signal — Bounty 2: Confidential Compute Apps**
 

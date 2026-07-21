@@ -1,4 +1,4 @@
-# CipherSign architecture
+# <img src="logo.svg" alt="" width="28" height="27" /> CipherSign architecture
 
 ## One-liner
 

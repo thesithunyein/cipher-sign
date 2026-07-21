@@ -52,6 +52,19 @@ footer {
   border-bottom: 1px solid var(--line);
 }
 
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 27px;
+  flex-shrink: 0;
+  display: block;
+}
+
 .brand {
   margin: 0;
   font-family: var(--font-display);
