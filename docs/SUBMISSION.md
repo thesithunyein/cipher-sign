@@ -26,7 +26,7 @@ Built for agent wallets, payroll bots, and OTC/escrow flows that must prove: *th
 - **Repo:** https://github.com/thesithunyein/cipher-sign  
 - **Network:** Flare Testnet Coston2 (chain id 114)  
 
-**Note for judges:** Live FCC on Coston2 is being refreshed by Flare. The shipped demo uses **mock mode with the same policy rules as the TEE extension**, plus a real Coston2 `InstructionSender`. Live `/direct` plugs in when `develop` tee-proxy/tee-node is stable.
+**Note for judges:** Live FCC stack is running on Coston2 with simulated TEE (`SIMULATED_TEE=true`, `CHAIN_ID=114`). Policy-gated `KEY/UPDATE` → `SET_POLICY` → `SIGN` is proven via `/direct` (`npm run live:smoke`). The public Vercel URL uses live mode when `VITE_DIRECT_*` points at a tunnel; otherwise the UI falls back to the same policy rules locally for browsing.
 
 ## How it uses Flare
 

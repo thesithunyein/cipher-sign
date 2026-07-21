@@ -62,6 +62,11 @@ services:
       - MODE=1
       - LOCAL_MODE=${LOCAL_MODE:-false}
       - SIMULATED_TEE=${SIMULATED_TEE:-true}
+      # Must match proxy chain_id (114) or TEE_INFO signature verify panics
+      - CHAIN_ID=${CHAIN_ID:-114}
+      - CHAIN_URL=${CHAIN_URL:-https://coston2-api.flare.network/ext/C/rpc}
+      - GOVERNANCE_SIGNERS=${GOVERNANCE_SIGNERS:-${INITIAL_OWNER}}
+      - GOVERNANCE_THRESHOLD=${GOVERNANCE_THRESHOLD:-1}
     depends_on:
       ext-proxy:
         condition: service_healthy

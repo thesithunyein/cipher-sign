@@ -385,3 +385,17 @@ window
 document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
 refreshHints();
 sync();
+
+if (live) {
+  setStatus(
+    "idle",
+    "Live TEE connected",
+    "Seed key once (npm run live:smoke), then lock policy and sign."
+  );
+} else {
+  setStatus(
+    "idle",
+    "Local policy engine",
+    "Set VITE_DIRECT_URL to hit the live Coston2 TEE stack."
+  );
+}

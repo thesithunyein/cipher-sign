@@ -114,11 +114,26 @@ Required for live Coston2:
 - `INITIAL_OWNER` — matching address
 - `LOCAL_MODE=false`
 - `SIMULATED_TEE=true`
+- `CHAIN_ID=114` (must match proxy `chain_id` or TEE_INFO signature panics)
 - `EXT_PROXY_URL` — public tunnel to **6674**
 - `NORMAL_PROXY_URL=https://tee-proxy-coston2-1.flare.rocks`
 - `TEE_NODE_VERSION=develop` / `TEE_PROXY_VERSION=develop` (Docker build)
 
 Optional: `DIRECT_API_KEY` for web live mode (`VITE_DIRECT_URL` + `VITE_DIRECT_API_KEY`).
+
+### Prove live /direct (no Go)
+
+With the stack healthy on `:6674`:
+
+```bash
+cd web
+cp .env.example .env.local   # set VITE_DIRECT_URL=http://127.0.0.1:6674 + same DIRECT_API_KEY
+npm ci
+npm run live:smoke           # UPDATE + SET_POLICY + SIGN pass/reject
+npm run dev                  # UI hits live TEE (not mock)
+```
+
+If smoke PASS, record Loom against `npm run dev` (live). Public Vercel needs a working tunnel URL in build env.
 
 ## Extension tests only (no Docker)
 

@@ -1,6 +1,8 @@
 /**
  * Live Flare FCC /direct client helpers for CipherSign demo.
  * Used when VITE_DIRECT_URL + VITE_DIRECT_API_KEY are set.
+ *
+ * Proxy flow: POST /direct → action id → poll GET /action/result/:id
  */
 
 import { encodeAbiParameters, type Hex } from "viem";
@@ -56,9 +58,75 @@ export type DirectResult = {
   log?: string;
 };
 
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function extractActionId(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const o = body as Record<string, unknown>;
+  if (typeof o.id === "string") return o.id;
+  const data = o.data;
+  if (data && typeof data === "object") {
+    const id = (data as Record<string, unknown>).id;
+    if (typeof id === "string") return id;
+  }
+  return null;
+}
+
+function normalizeResult(parsed: Record<string, unknown>): DirectResult | null {
+  const nested = parsed.result ?? parsed.Result;
+  const src =
+    nested && typeof nested === "object"
+      ? (nested as Record<string, unknown>)
+      : parsed;
+  if (src.status === undefined && src.Status === undefined) return null;
+  const status = Number(src.status ?? src.Status ?? -1);
+  const dataRaw = src.data ?? src.Data;
+  const logRaw = src.log ?? src.Log;
+  let data: string | undefined;
+  if (typeof dataRaw === "string") data = dataRaw;
+  else if (dataRaw != null) data = String(dataRaw);
+  return {
+    status,
+    data,
+    log: typeof logRaw === "string" ? logRaw : undefined,
+  };
+}
+
+async function pollActionResult(
+  baseUrl: string,
+  actionId: string,
+  timeoutMs = 60_000
+): Promise<DirectResult> {
+  const url = `${baseUrl.replace(/\/$/, "")}/action/result/${actionId}?submissionTag=submit`;
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const res = await fetch(url);
+    if (res.status === 404 || res.status === 204) {
+      await sleep(500);
+      continue;
+    }
+    const text = await res.text();
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      await sleep(500);
+      continue;
+    }
+    const out = normalizeResult(parsed);
+    if (!out || out.status < 0) {
+      await sleep(500);
+      continue;
+    }
+    return out;
+  }
+  throw new Error(`Timed out waiting for action result ${actionId}`);
+}
+
 /**
- * Call TEE proxy POST /direct (Flare FCC hackathon path).
- * Exact payload shape follows fce-direct-sign /direct convention.
+ * Call TEE proxy POST /direct (Flare FCC hackathon path), then poll for result.
  */
 export async function sendDirectInstruction(opts: {
   baseUrl: string;
@@ -66,12 +134,22 @@ export async function sendDirectInstruction(opts: {
   opType: string;
   opCommand: string;
   originalMessage: Hex | string;
+  timeoutMs?: number;
 }): Promise<DirectResult> {
-  const url = opts.baseUrl.replace(/\/$/, "") + "/direct";
+  const base = opts.baseUrl.replace(/\/$/, "");
+  const url = `${base}/direct`;
+
+  // Proxy DirectInstruction uses `message` (bytes hex). Also accept originalMessage for clarity.
+  const message =
+    typeof opts.originalMessage === "string" &&
+    opts.originalMessage.startsWith("0x")
+      ? opts.originalMessage
+      : opts.originalMessage;
+
   const body = {
     opType: stringToBytes32Hex(opts.opType),
     opCommand: stringToBytes32Hex(opts.opCommand),
-    originalMessage: opts.originalMessage,
+    message,
   };
 
   const res = await fetch(url, {
@@ -84,18 +162,36 @@ export async function sendDirectInstruction(opts: {
   });
 
   const text = await res.text();
-  let parsed: DirectResult;
+  let parsed: unknown;
   try {
-    parsed = JSON.parse(text) as DirectResult;
+    parsed = JSON.parse(text);
   } catch {
     throw new Error(`Direct API non-JSON (${res.status}): ${text.slice(0, 200)}`);
   }
   if (!res.ok) {
+    const errObj = parsed as DirectResult;
     throw new Error(
-      `Direct API HTTP ${res.status}: ${parsed.log ?? text.slice(0, 200)}`
+      `Direct API HTTP ${res.status}: ${errObj.log ?? text.slice(0, 200)}`
     );
   }
-  return parsed;
+
+  // Some builds may return the result inline; prefer action-id poll.
+  const inline = parsed as DirectResult & { Status?: number };
+  if (typeof inline.status === "number" || typeof inline.Status === "number") {
+    return {
+      status: Number(inline.status ?? inline.Status),
+      data: inline.data,
+      log: inline.log,
+    };
+  }
+
+  const actionId = extractActionId(parsed);
+  if (!actionId) {
+    throw new Error(
+      `Direct API missing action id: ${text.slice(0, 240)}`
+    );
+  }
+  return pollActionResult(base, actionId, opts.timeoutMs ?? 60_000);
 }
 
 export function liveConfig(): { baseUrl: string; apiKey: string } | null {
