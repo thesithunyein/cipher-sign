@@ -7,7 +7,7 @@
       name="description"
       content="CipherSign — policy-gated confidential signing on Flare Confidential Compute. Keys in TEE. Signatures only when policy says yes."
     />
-    <meta name="theme-color" content="#08070a" />
+    <meta name="theme-color" content="#07060b" />
     <title>CipherSign — Policy-gated TEE signer</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
@@ -25,19 +25,19 @@
     <div class="orb orb-b" aria-hidden="true"></div>
 
     <header class="top">
-      <div class="brand-lockup">
+      <a class="brand-lockup" href="#top" id="top">
         <img
           class="brand-mark"
           src="/favicon.svg"
           width="28"
           height="27"
-          alt="CipherSign"
+          alt=""
         />
         <div>
           <p class="brand">CipherSign</p>
           <p class="mode" id="mode">checking…</p>
         </div>
-      </div>
+      </a>
       <nav class="nav" aria-label="Primary">
         <a href="#demo">Demo</a>
         <a
@@ -57,28 +57,43 @@
 
     <main>
       <section class="hero">
-        <p class="eyebrow">Flare Summer Signal · Bounty 2 · Confidential Compute</p>
-        <h1>Sign only when the policy says yes.</h1>
-        <p class="lede">
-          Private keys stay inside a Flare TEE. Recipients, caps, and expiry are
-          enforced in the enclave — not in a mutable backend.
-        </p>
-        <div class="hero-actions">
-          <a class="btn primary" href="#demo">Try the vault</a>
-          <a
-            class="btn ghost"
-            href="https://github.com/thesithunyein/cipher-sign"
-            target="_blank"
-            rel="noreferrer"
-            >View source</a
-          >
+        <div class="hero-copy">
+          <p class="eyebrow">Flare Summer Signal · Bounty 2 · Confidential Compute</p>
+          <h1>Sign only when the policy says yes.</h1>
+          <p class="lede">
+            Private keys stay inside a Flare TEE. Recipients, caps, and expiry
+            are enforced in the enclave — not in a mutable backend.
+          </p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#demo">Try the vault</a>
+            <a
+              class="btn ghost"
+              href="https://github.com/thesithunyein/cipher-sign"
+              target="_blank"
+              rel="noreferrer"
+              >View source</a
+            >
+          </div>
         </div>
-        <p class="banner" id="statusBanner" role="status">
-          Demo mode uses the same policy rules as the CipherSign TEE extension.
-          Live FCC on Coston2 is being refreshed by Flare — plug in
-          <code>VITE_DIRECT_URL</code> when ready.
-        </p>
+
+        <aside class="vault-card" aria-hidden="true">
+          <div class="vault-ring">
+            <img src="/favicon.svg" width="48" height="46" alt="" />
+          </div>
+          <p class="vault-label">Attested vault</p>
+          <ul class="vault-feats">
+            <li><span class="dot ok"></span> Key in TEE</li>
+            <li><span class="dot ok"></span> Policy gate</li>
+            <li><span class="dot warn"></span> Attack → reject</li>
+          </ul>
+        </aside>
       </section>
+
+      <p class="banner" id="statusBanner" role="status">
+        Demo mode uses the same policy rules as the CipherSign TEE extension.
+        Live FCC on Coston2 is being refreshed by Flare — plug in
+        <code>VITE_DIRECT_URL</code> when ready.
+      </p>
 
       <section class="proof" aria-label="On-chain proof">
         <div>
@@ -139,6 +154,12 @@
           Payroll bot may only pay one recipient up to a hard cap.
         </p>
       </section>
+
+      <ol class="rail" aria-label="Progress">
+        <li class="rail-item" id="rail-1" data-active="true">1 · Policy</li>
+        <li class="rail-item" id="rail-2">2 · Sign</li>
+        <li class="rail-item" id="rail-3">3 · Result</li>
+      </ol>
 
       <section class="flow" aria-label="Demo steps">
         <div class="step" id="step-policy" data-state="open">
@@ -223,6 +244,8 @@
         <pre id="log" aria-live="polite">Ready.</pre>
       </section>
     </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
     <footer>
       <span class="footer-brand">

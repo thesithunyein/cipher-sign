@@ -78,6 +78,34 @@ function setBusy(btn: HTMLButtonElement, busy: boolean) {
   btn.disabled = false;
 }
 
+const toastEl = document.querySelector<HTMLElement>("#toast")!;
+const rail1 = document.querySelector<HTMLElement>("#rail-1")!;
+const rail2 = document.querySelector<HTMLElement>("#rail-2")!;
+const rail3 = document.querySelector<HTMLElement>("#rail-3")!;
+let toastTimer = 0;
+
+function showToast(message: string, kind: "ok" | "bad" | "neutral" = "neutral") {
+  toastEl.hidden = false;
+  toastEl.textContent = message;
+  toastEl.classList.remove("ok", "bad", "show");
+  if (kind === "ok") toastEl.classList.add("ok");
+  if (kind === "bad") toastEl.classList.add("bad");
+  requestAnimationFrame(() => toastEl.classList.add("show"));
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toastEl.classList.remove("show");
+  }, 2600);
+}
+
+function setRail(step: 1 | 2 | 3) {
+  const items = [rail1, rail2, rail3];
+  items.forEach((el, i) => {
+    const n = (i + 1) as 1 | 2 | 3;
+    el.dataset.active = n === step ? "true" : "false";
+    el.dataset.done = n < step ? "true" : "false";
+  });
+}
+
 function syncSignControls() {
   const ready = Boolean(policy) || Boolean(live);
   trySignBtn.disabled = !ready;
@@ -85,6 +113,8 @@ function syncSignControls() {
   signHint.textContent = ready
     ? "Valid intents pass. Over-cap and wrong recipient are rejected."
     : "Lock a policy first to enable signing.";
+  if (ready) setRail(2);
+  else setRail(1);
 }
 
 function writeLog(message: string, kind: "ok" | "bad" | "neutral" = "neutral") {
@@ -166,6 +196,7 @@ function applyScenario(id: string) {
   policyState.classList.remove("locked");
   setSignState("waiting", "waiting");
   syncSignControls();
+  setRail(1);
   writeLog(`Scenario: ${id}. Lock policy, then request a signature.`);
 }
 
@@ -188,6 +219,7 @@ setPolicyBtn.addEventListener("click", async () => {
     recipientInput.classList.toggle("invalid", !isAddress(next.allowedRecipient));
     if (!isAddress(next.allowedRecipient)) {
       writeLog("Invalid recipient address.", "bad");
+      showToast("Invalid recipient address", "bad");
       return;
     }
 
@@ -203,12 +235,15 @@ setPolicyBtn.addEventListener("click", async () => {
       });
       if (res.status !== 1) {
         writeLog(`TEE rejected SET_POLICY.\n${res.log ?? "unknown"}`, "bad");
+        showToast("SET_POLICY rejected", "bad");
         return;
       }
       policy = next;
       policyState.textContent = "locked";
       policyState.classList.add("locked");
       syncSignControls();
+      setRail(2);
+      showToast("Policy locked in TEE", "ok");
       writeLog(
         `LIVE policy locked in TEE.\nrecipient=${next.allowedRecipient}\nmax=${next.maxAmount}\nexpires=${next.expiresAt}`,
         "ok"
@@ -220,12 +255,15 @@ setPolicyBtn.addEventListener("click", async () => {
     policyState.textContent = "locked";
     policyState.classList.add("locked");
     syncSignControls();
+    setRail(2);
+    showToast("Policy locked", "ok");
     writeLog(
       `Policy locked (demo = TEE rules).\nrecipient=${policy.allowedRecipient}\nmax=${policy.maxAmount}\nexpires=${policy.expiresAt}`,
       "ok"
     );
   } catch (e) {
     writeLog(`Policy error: ${e}`, "bad");
+    showToast("Policy error", "bad");
   } finally {
     setBusy(setPolicyBtn, false);
     syncSignControls();
@@ -246,6 +284,7 @@ trySignBtn.addEventListener("click", async () => {
     if (!isAddress(intent.recipient)) {
       writeLog("Invalid intent recipient.", "bad");
       setSignState("invalid", "fail");
+      showToast("Invalid intent recipient", "bad");
       return;
     }
 
@@ -261,10 +300,14 @@ trySignBtn.addEventListener("click", async () => {
       });
       if (res.status !== 1) {
         setSignState("rejected", "fail");
+        setRail(3);
         writeLog(`TEE rejected SIGN.\n${res.log ?? "unknown"}`, "bad");
+        showToast("SIGN rejected", "bad");
         return;
       }
       setSignState("approved", "pass");
+      setRail(3);
+      showToast("Signature approved", "ok");
       writeLog(
         `LIVE TEE approved SIGN.\ndata=${res.data ?? "(none)"}\n\nPath: /direct → CipherSign extension in TEE.`,
         "ok"
@@ -280,12 +323,16 @@ trySignBtn.addEventListener("click", async () => {
     const err = checkPolicy(policy, intent);
     if (err) {
       setSignState("rejected", "fail");
+      setRail(3);
       writeLog(`TEE rejected SIGN.\n${err}`, "bad");
+      showToast(err, "bad");
       return;
     }
     const intentHex = encodeIntent(intent);
     const sig = fakeSignature(intentHex);
     setSignState("approved", "pass");
+    setRail(3);
+    showToast("Signature approved", "ok");
     writeLog(
       `Demo TEE approved SIGN.\nintent=${intentHex}\nsignature(demo)=${sig}\n\nOver-cap attack should fail — try it next.`,
       "ok"
@@ -293,6 +340,7 @@ trySignBtn.addEventListener("click", async () => {
   } catch (e) {
     setSignState("error", "fail");
     writeLog(`Sign error: ${e}`, "bad");
+    showToast("Sign error", "bad");
   } finally {
     setBusy(trySignBtn, false);
     syncSignControls();
@@ -314,6 +362,7 @@ document.querySelector("#clearLog")!.addEventListener("click", () => {
 });
 
 syncSignControls();
+setRail(1);
 writeLog(
   live
     ? "Live mode armed. Lock policy, then request signature against Coston2 TEE."
