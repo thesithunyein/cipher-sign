@@ -49,6 +49,10 @@ const modeEl = document.querySelector<HTMLElement>("#mode")!;
 const policyState = document.querySelector<HTMLElement>("#policyState")!;
 const signState = document.querySelector<HTMLElement>("#signState")!;
 const scenarioHint = document.querySelector<HTMLElement>("#scenarioHint")!;
+const signHint = document.querySelector<HTMLElement>("#signHint")!;
+const setPolicyBtn = document.querySelector<HTMLButtonElement>("#setPolicy")!;
+const trySignBtn = document.querySelector<HTMLButtonElement>("#trySign")!;
+const tryBadBtn = document.querySelector<HTMLButtonElement>("#tryBad")!;
 const live = liveConfig();
 
 modeEl.textContent = live
@@ -59,6 +63,28 @@ const banner = document.querySelector<HTMLElement>("#statusBanner")!;
 if (live) {
   banner.textContent =
     "Live mode: requests go to Flare TEE proxy /direct → CipherSign extension.";
+}
+
+function setBusy(btn: HTMLButtonElement, busy: boolean) {
+  btn.classList.toggle("busy", busy);
+  if (busy) {
+    btn.disabled = true;
+    return;
+  }
+  if (btn === trySignBtn || btn === tryBadBtn) {
+    btn.disabled = !policy && !live;
+    return;
+  }
+  btn.disabled = false;
+}
+
+function syncSignControls() {
+  const ready = Boolean(policy) || Boolean(live);
+  trySignBtn.disabled = !ready;
+  tryBadBtn.disabled = !ready;
+  signHint.textContent = ready
+    ? "Valid intents pass. Over-cap and wrong recipient are rejected."
+    : "Lock a policy first to enable signing.";
 }
 
 function writeLog(message: string, kind: "ok" | "bad" | "neutral" = "neutral") {
@@ -74,6 +100,10 @@ function setSignState(text: string, kind: "waiting" | "pass" | "fail") {
   signState.classList.remove("pass", "fail", "locked");
   if (kind === "pass") signState.classList.add("pass");
   if (kind === "fail") signState.classList.add("fail");
+}
+
+function isAddress(value: string): value is `0x${string}` {
+  return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
 function readPolicyFromForm(): Policy {
@@ -135,27 +165,33 @@ function applyScenario(id: string) {
   policyState.textContent = "unlocked";
   policyState.classList.remove("locked");
   setSignState("waiting", "waiting");
+  syncSignControls();
   writeLog(`Scenario: ${id}. Lock policy, then request a signature.`);
 }
 
 document.querySelectorAll<HTMLButtonElement>(".scenario").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document
-      .querySelectorAll(".scenario")
-      .forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".scenario").forEach((b) => {
+      b.classList.remove("active");
+      b.setAttribute("aria-selected", "false");
+    });
     btn.classList.add("active");
+    btn.setAttribute("aria-selected", "true");
     applyScenario(btn.dataset.scenario || "payroll");
   });
 });
 
-document.querySelector("#setPolicy")!.addEventListener("click", async () => {
+setPolicyBtn.addEventListener("click", async () => {
+  const recipientInput = document.querySelector<HTMLInputElement>("#recipient")!;
   try {
     const next = readPolicyFromForm();
-    if (!/^0x[a-fA-F0-9]{40}$/.test(next.allowedRecipient)) {
+    recipientInput.classList.toggle("invalid", !isAddress(next.allowedRecipient));
+    if (!isAddress(next.allowedRecipient)) {
       writeLog("Invalid recipient address.", "bad");
       return;
     }
 
+    setBusy(setPolicyBtn, true);
     if (live) {
       writeLog("Sending SET_POLICY to Flare TEE /direct…");
       const res = await sendDirectInstruction({
@@ -172,6 +208,7 @@ document.querySelector("#setPolicy")!.addEventListener("click", async () => {
       policy = next;
       policyState.textContent = "locked";
       policyState.classList.add("locked");
+      syncSignControls();
       writeLog(
         `LIVE policy locked in TEE.\nrecipient=${next.allowedRecipient}\nmax=${next.maxAmount}\nexpires=${next.expiresAt}`,
         "ok"
@@ -182,24 +219,37 @@ document.querySelector("#setPolicy")!.addEventListener("click", async () => {
     policy = next;
     policyState.textContent = "locked";
     policyState.classList.add("locked");
+    syncSignControls();
     writeLog(
       `Policy locked (demo = TEE rules).\nrecipient=${policy.allowedRecipient}\nmax=${policy.maxAmount}\nexpires=${policy.expiresAt}`,
       "ok"
     );
   } catch (e) {
     writeLog(`Policy error: ${e}`, "bad");
+  } finally {
+    setBusy(setPolicyBtn, false);
+    syncSignControls();
   }
 });
 
-document.querySelector("#trySign")!.addEventListener("click", async () => {
+trySignBtn.addEventListener("click", async () => {
   if (!policy && !live) {
     writeLog("Set a policy first.", "bad");
     setSignState("need policy", "fail");
     return;
   }
+  const recipientInput =
+    document.querySelector<HTMLInputElement>("#intentRecipient")!;
   try {
     const intent = readIntentFromForm();
+    recipientInput.classList.toggle("invalid", !isAddress(intent.recipient));
+    if (!isAddress(intent.recipient)) {
+      writeLog("Invalid intent recipient.", "bad");
+      setSignState("invalid", "fail");
+      return;
+    }
 
+    setBusy(trySignBtn, true);
     if (live) {
       writeLog("Sending SIGN intent to Flare TEE /direct…");
       const res = await sendDirectInstruction({
@@ -243,19 +293,27 @@ document.querySelector("#trySign")!.addEventListener("click", async () => {
   } catch (e) {
     setSignState("error", "fail");
     writeLog(`Sign error: ${e}`, "bad");
+  } finally {
+    setBusy(trySignBtn, false);
+    syncSignControls();
   }
 });
 
-document.querySelector("#tryBad")!.addEventListener("click", () => {
+tryBadBtn.addEventListener("click", () => {
   const max =
     policy?.maxAmount ??
     BigInt(document.querySelector<HTMLInputElement>("#maxAmount")!.value || "0");
   document.querySelector<HTMLInputElement>("#intentAmount")!.value = (
     max + 1n
   ).toString();
-  document.querySelector<HTMLButtonElement>("#trySign")!.click();
+  trySignBtn.click();
 });
 
+document.querySelector("#clearLog")!.addEventListener("click", () => {
+  writeLog("Log cleared.");
+});
+
+syncSignControls();
 writeLog(
   live
     ? "Live mode armed. Lock policy, then request signature against Coston2 TEE."
