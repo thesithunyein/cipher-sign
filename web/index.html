@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="CipherSign — policy-gated confidential signing on Flare Confidential Compute. Keys in TEE. Signatures only when policy says yes."
+      content="CipherSign — confidential signing vault on Flare. Keys in a TEE. Sign only when policy says yes."
     />
     <meta name="theme-color" content="#07060b" />
-    <title>CipherSign — Policy-gated TEE signer</title>
+    <title>CipherSign — Confidential signing vault</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -19,38 +19,32 @@
     />
   </head>
   <body>
-    <a class="skip" href="#demo">Skip to demo</a>
+    <a class="skip" href="#workspace">Skip to app</a>
     <div class="noise" aria-hidden="true"></div>
     <div class="orb orb-a" aria-hidden="true"></div>
     <div class="orb orb-b" aria-hidden="true"></div>
 
     <header class="top">
       <a class="brand-lockup" href="#top" id="top">
-        <img
-          class="brand-mark"
-          src="/favicon.svg"
-          width="28"
-          height="27"
-          alt=""
-        />
+        <img class="brand-mark" src="/favicon.svg" width="28" height="27" alt="" />
         <div>
           <p class="brand">CipherSign</p>
           <p class="mode" id="mode">checking…</p>
         </div>
       </a>
       <nav class="nav" aria-label="Primary">
-        <a href="#demo">Demo</a>
+        <a href="#workspace">Open vault</a>
         <a
           href="https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9"
           target="_blank"
           rel="noreferrer"
-          >Coston2</a
+          >On-chain</a
         >
         <a
           href="https://github.com/thesithunyein/cipher-sign"
           target="_blank"
           rel="noreferrer"
-          >Repo</a
+          >Source</a
         >
       </nav>
     </header>
@@ -58,190 +52,206 @@
     <main>
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">Flare Summer Signal · Bounty 2 · Confidential Compute</p>
-          <h1>Sign only when the policy says yes.</h1>
+          <p class="eyebrow">Flare · Confidential Compute · Bounty 2</p>
+          <h1>A signing vault that refuses bad requests.</h1>
           <p class="lede">
-            Private keys stay inside a Flare TEE. Recipients, caps, and expiry
-            are enforced in the enclave — not in a mutable backend.
+            Your private key never leaves a Flare TEE. Set who can be paid, how
+            much, and until when — then every signature is checked inside the
+            enclave.
           </p>
           <div class="hero-actions">
-            <a class="btn primary" href="#demo">Try the vault</a>
-            <a
-              class="btn ghost"
-              href="https://github.com/thesithunyein/cipher-sign"
-              target="_blank"
-              rel="noreferrer"
-              >View source</a
-            >
+            <a class="btn primary" href="#workspace">Start in 30 seconds</a>
+            <button type="button" class="btn ghost" id="watchDemo">
+              Run quick demo
+            </button>
           </div>
         </div>
 
-        <aside class="vault-card" aria-hidden="true">
+        <aside class="vault-card" aria-label="Vault status">
           <div class="vault-ring">
             <img src="/favicon.svg" width="48" height="46" alt="" />
           </div>
-          <p class="vault-label">Attested vault</p>
+          <p class="vault-label">Confidential vault</p>
           <ul class="vault-feats">
-            <li><span class="dot ok"></span> Key in TEE</li>
-            <li><span class="dot ok"></span> Policy gate</li>
-            <li><span class="dot warn"></span> Attack → reject</li>
+            <li><span class="dot ok"></span> Key sealed in TEE</li>
+            <li><span class="dot ok"></span> Policy enforced here</li>
+            <li><span class="dot warn"></span> Attacks get rejected</li>
           </ul>
         </aside>
       </section>
 
-      <p class="banner" id="statusBanner" role="status">
-        Demo mode uses the same policy rules as the CipherSign TEE extension.
-        Live FCC on Coston2 is being refreshed by Flare — plug in
-        <code>VITE_DIRECT_URL</code> when ready.
-      </p>
-
-      <section class="proof" aria-label="On-chain proof">
-        <div>
-          <span class="k">InstructionSender</span>
-          <a
-            class="v mono"
-            href="https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9"
-            target="_blank"
-            rel="noreferrer"
-            >0x79bB…0Ee9</a
-          >
-        </div>
-        <div>
-          <span class="k">EXTENSION_ID</span>
-          <span class="v mono">0x…0665</span>
-        </div>
-        <div>
-          <span class="k">Tests</span>
-          <span class="v">28 / 28</span>
-        </div>
+      <section class="how" aria-label="How it works">
+        <article>
+          <span class="how-n">1</span>
+          <h3>Set rules</h3>
+          <p>Choose allowed payee, max amount, and expiry.</p>
+        </article>
+        <article>
+          <span class="how-n">2</span>
+          <h3>Ask to sign</h3>
+          <p>Send a normal payment intent to the vault.</p>
+        </article>
+        <article>
+          <span class="how-n">3</span>
+          <h3>Get a verdict</h3>
+          <p>Pass → signature. Fail → blocked in the TEE.</p>
+        </article>
       </section>
 
-      <section class="scenarios" id="demo" aria-label="Use-case presets">
-        <div class="section-head">
-          <h2>Pick a scenario</h2>
-          <p class="section-sub">Presets fill policy + intent. Then lock and sign.</p>
+      <p class="banner" id="statusBanner" role="status">
+        You’re in interactive demo mode — same policy checks as the live TEE
+        extension. Perfect for trying the product while Flare finishes the
+        Coston2 FCC refresh.
+      </p>
+
+      <section class="app-shell" id="workspace">
+        <div class="app-head">
+          <div>
+            <h2>Vault workspace</h2>
+            <p class="section-sub">Pick a use case, lock rules, then request a signature.</p>
+          </div>
+          <div class="pill" id="readyPill">Policy unlocked</div>
         </div>
-        <div class="scenario-row" id="scenarios" role="tablist">
-          <button
-            type="button"
-            class="scenario active"
-            data-scenario="payroll"
-            role="tab"
-            aria-selected="true"
-          >
-            Agent payroll
+
+        <div class="scenario-row" id="scenarios" role="tablist" aria-label="Use cases">
+          <button type="button" class="scenario active" data-scenario="payroll" role="tab" aria-selected="true">
+            <strong>Payroll</strong>
+            <span>Agent pays one employee</span>
           </button>
-          <button
-            type="button"
-            class="scenario"
-            data-scenario="otc"
-            role="tab"
-            aria-selected="false"
-          >
-            OTC escrow
+          <button type="button" class="scenario" data-scenario="otc" role="tab" aria-selected="false">
+            <strong>OTC</strong>
+            <span>Settle to one counterparty</span>
           </button>
-          <button
-            type="button"
-            class="scenario"
-            data-scenario="treasury"
-            role="tab"
-            aria-selected="false"
-          >
-            Treasury bot
+          <button type="button" class="scenario" data-scenario="treasury" role="tab" aria-selected="false">
+            <strong>Treasury</strong>
+            <span>Top up ops wallet safely</span>
           </button>
         </div>
         <p class="scenario-hint" id="scenarioHint">
           Payroll bot may only pay one recipient up to a hard cap.
         </p>
-      </section>
 
-      <ol class="rail" aria-label="Progress">
-        <li class="rail-item" id="rail-1" data-active="true">1 · Policy</li>
-        <li class="rail-item" id="rail-2">2 · Sign</li>
-        <li class="rail-item" id="rail-3">3 · Result</li>
-      </ol>
+        <ol class="rail" aria-label="Progress">
+          <li class="rail-item" id="rail-1" data-active="true">Set policy</li>
+          <li class="rail-item" id="rail-2">Request sign</li>
+          <li class="rail-item" id="rail-3">See result</li>
+        </ol>
 
-      <section class="flow" aria-label="Demo steps">
-        <div class="step" id="step-policy" data-state="open">
-          <div class="step-head">
-            <span class="n" aria-hidden="true">1</span>
-            <h2>Lock policy in vault</h2>
-            <span class="state" id="policyState">unlocked</span>
-          </div>
-          <div class="step-body">
-            <label for="recipient">
-              Allowed recipient
-              <input
-                id="recipient"
-                type="text"
-                spellcheck="false"
-                autocomplete="off"
-                inputmode="text"
-                value="0x1111111111111111111111111111111111111111"
-              />
-            </label>
-            <div class="field-row">
-              <label for="maxAmount">
-                Max amount (raw units)
-                <input id="maxAmount" type="text" inputmode="numeric" value="1000000" />
-              </label>
-              <label for="expiresAt">
-                Expires (unix, 0 = never)
-                <input id="expiresAt" type="text" inputmode="numeric" value="0" />
-              </label>
+        <div class="flow">
+          <section class="step" id="step-policy">
+            <div class="step-head">
+              <span class="n" aria-hidden="true">1</span>
+              <h3>Spending policy</h3>
+              <span class="state" id="policyState">unlocked</span>
             </div>
-            <button type="button" id="setPolicy" class="btn primary">
-              Lock policy
-            </button>
-          </div>
-        </div>
-
-        <div class="step" id="step-sign" data-state="open">
-          <div class="step-head">
-            <span class="n" aria-hidden="true">2</span>
-            <h2>Request signature</h2>
-            <span class="state" id="signState">waiting</span>
-          </div>
-          <div class="step-body">
-            <label for="intentRecipient">
-              Recipient
-              <input
-                id="intentRecipient"
-                type="text"
-                spellcheck="false"
-                autocomplete="off"
-                value="0x1111111111111111111111111111111111111111"
-              />
-            </label>
-            <div class="field-row">
-              <label for="intentAmount">
-                Amount
-                <input id="intentAmount" type="text" inputmode="numeric" value="500000" />
+            <div class="step-body">
+              <label for="recipient">
+                Who can receive funds
+                <input
+                  id="recipient"
+                  type="text"
+                  spellcheck="false"
+                  autocomplete="off"
+                  placeholder="0x…"
+                  value="0x1111111111111111111111111111111111111111"
+                />
               </label>
-              <label for="intentDeadline">
-                Deadline (unix, 0 = none)
-                <input id="intentDeadline" type="text" inputmode="numeric" value="0" />
-              </label>
-            </div>
-            <div class="actions">
-              <button type="button" id="trySign" class="btn primary" disabled>
-                Request signature
-              </button>
-              <button type="button" id="tryBad" class="btn ghost" disabled>
-                Try over-cap attack
+              <div class="field-row">
+                <label for="maxAmount">
+                  Max amount
+                  <input id="maxAmount" type="text" inputmode="numeric" value="1000000" />
+                  <span class="field-note" id="maxAmountNote">1,000,000 units</span>
+                </label>
+                <label for="expiresAt">
+                  Expires at
+                  <input id="expiresAt" type="text" inputmode="numeric" value="0" />
+                  <span class="field-note">0 = never expires</span>
+                </label>
+              </div>
+              <button type="button" id="setPolicy" class="btn primary">
+                Lock policy in vault
               </button>
             </div>
-            <p class="hint" id="signHint">Lock a policy first to enable signing.</p>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section class="log-panel" aria-label="Vault log">
-        <div class="section-head">
-          <h2>Vault log</h2>
-          <button type="button" class="btn tiny ghost" id="clearLog">Clear</button>
+          <section class="step" id="step-sign">
+            <div class="step-head">
+              <span class="n" aria-hidden="true">2</span>
+              <h3>Signature request</h3>
+              <span class="state" id="signState">waiting</span>
+            </div>
+            <div class="step-body">
+              <label for="intentRecipient">
+                Pay to
+                <input
+                  id="intentRecipient"
+                  type="text"
+                  spellcheck="false"
+                  autocomplete="off"
+                  value="0x1111111111111111111111111111111111111111"
+                />
+              </label>
+              <div class="field-row">
+                <label for="intentAmount">
+                  Amount
+                  <input id="intentAmount" type="text" inputmode="numeric" value="500000" />
+                  <span class="field-note" id="intentAmountNote">500,000 units</span>
+                </label>
+                <label for="intentDeadline">
+                  Deadline
+                  <input id="intentDeadline" type="text" inputmode="numeric" value="0" />
+                  <span class="field-note">0 = no deadline</span>
+                </label>
+              </div>
+              <div class="actions">
+                <button type="button" id="trySign" class="btn primary" disabled>
+                  Approve &amp; sign
+                </button>
+                <button type="button" id="tryBad" class="btn danger" disabled>
+                  Simulate overspend
+                </button>
+              </div>
+              <p class="hint" id="signHint">Lock a policy first to enable signing.</p>
+            </div>
+          </section>
         </div>
-        <pre id="log" aria-live="polite">Ready.</pre>
+
+        <section class="result" id="resultPanel" aria-live="polite">
+          <div class="result-head">
+            <h3>Latest result</h3>
+            <span class="result-badge" id="resultBadge">Waiting</span>
+          </div>
+          <p class="result-title" id="resultTitle">Ready when you are</p>
+          <p class="result-body" id="resultBody">
+            Lock a policy, then approve a valid payment — or simulate an overspend
+            to see the vault reject it.
+          </p>
+        </section>
+
+        <details class="tech">
+          <summary>Technical details (Flare FCC)</summary>
+          <div class="proof" aria-label="On-chain proof">
+            <div>
+              <span class="k">InstructionSender</span>
+              <a
+                class="v mono"
+                href="https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9"
+                target="_blank"
+                rel="noreferrer"
+                >0x79bB…0Ee9</a
+              >
+            </div>
+            <div>
+              <span class="k">EXTENSION_ID</span>
+              <span class="v mono">0x…0665</span>
+            </div>
+            <div>
+              <span class="k">Tests</span>
+              <span class="v">28 / 28</span>
+            </div>
+          </div>
+          <pre id="log" class="tech-log">Vault log ready.</pre>
+        </details>
       </section>
     </main>
 
@@ -250,7 +260,7 @@
     <footer>
       <span class="footer-brand">
         <img src="/favicon.svg" width="16" height="15" alt="" />
-        Flare Confidential Compute · Summer Signal
+        CipherSign on Flare Confidential Compute
       </span>
       <span class="links">
         <a href="https://dev.flare.network/fcc/overview" target="_blank" rel="noreferrer"
