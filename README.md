@@ -83,6 +83,120 @@ cd web && npm ci && npm run dev
 cd tee/typescript && npm test
 ```
 
+---
+
+## Project structure
+
+```text
+cipher-sign/
+├── .github/
+│   └── workflows/
+│       └── build-demo.yml
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── CREATE_REPO.md
+│   ├── DEMO_SCRIPT.md
+│   ├── FEEDBACK.md
+│   ├── PROGRESS.md
+│   ├── SETUP.md
+│   ├── SUBMISSION.md
+│   ├── TELEGRAM_DB_FOLLOWUP.md
+│   ├── TELEGRAM_DEVELOP_ACK.md
+│   ├── TELEGRAM_INDEXER_REQUEST.md
+│   ├── TELEGRAM_SIGNATURE_ERROR.md
+│   ├── WIN_CHECKLIST.md
+│   ├── WIN_PATH.md
+│   ├── check-ready.ps1
+│   ├── ciphersign-logo-480.png
+│   ├── ciphersign-logo-480.svg
+│   └── logo.svg
+├── scripts/
+├── tee/
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── README.md
+│   ├── docker-compose.yaml
+│   ├── config/
+│   │   ├── extension.env
+│   │   ├── coston2/
+│   │   │   └── deployed-addresses.json
+│   │   └── proxy/
+│   │       ├── extension_proxy.toml.example
+│   │       ├── extension_proxy.coston2.toml.example
+│   │       └── extension_proxy.coston2.docker.toml.example
+│   ├── contract/
+│   │   ├── InstructionSender.sol
+│   │   ├── foundry.toml
+│   │   └── interface/
+│   │       ├── ITeeExtensionRegistry.sol
+│   │       └── ITeeMachineRegistry.sol
+│   ├── proxy/
+│   │   └── Dockerfile
+│   ├── scripts/
+│   │   ├── full-setup.sh
+│   │   ├── generate-bindings.sh
+│   │   ├── pre-build.sh
+│   │   ├── post-build.sh
+│   │   ├── start-services.sh
+│   │   ├── stop-services.sh
+│   │   ├── test.sh
+│   │   └── test-direct.sh
+│   ├── go/                          # upstream FCC Go scaffold
+│   ├── python/                      # upstream FCC Python scaffold
+│   ├── skills/                      # upstream create-extension skill
+│   └── typescript/                  # CipherSign TEE extension (primary)
+│       ├── Dockerfile
+│       ├── README.md
+│       ├── package.json
+│       ├── package-lock.json
+│       ├── tsconfig.json
+│       ├── vitest.config.ts
+│       └── src/
+│           ├── main.ts
+│           ├── app/
+│           │   ├── abi.ts
+│           │   ├── config.ts
+│           │   ├── crypto.ts
+│           │   └── handlers.ts      # KEY/UPDATE, SET_POLICY, SIGN
+│           ├── base/
+│           │   ├── crypto.ts
+│           │   ├── encoding.ts
+│           │   ├── server.ts
+│           │   └── types.ts
+│           └── __tests__/
+│               ├── abi.test.ts
+│               ├── base-crypto.test.ts
+│               ├── crypto.test.ts
+│               ├── encoding.test.ts
+│               └── handlers.test.ts
+├── web/
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── index.html
+│   ├── live-direct-smoke.mjs
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── tsconfig.json
+│   ├── vercel.json
+│   ├── vite.config.ts
+│   ├── public/
+│   │   ├── favicon.svg
+│   │   └── logo.svg
+│   └── src/
+│       ├── fcc.ts
+│       ├── main.ts
+│       ├── style.css
+│       └── assets/
+├── .gitignore
+├── LICENSE
+├── README.md
+└── vercel.json
+```
+
+Product code paths: **`web/`** (UI) and **`tee/typescript/`** (policy-gated signer). `tee/go`, `tee/python`, and `tee/skills` are upstream Flare FCC scaffold.
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE). Upstream FCC scaffold © Flare Foundation.
