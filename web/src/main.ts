@@ -87,7 +87,7 @@ function setTheme(theme: "light" | "dark") {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("cs-theme", theme);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", theme === "light" ? "#f5f5f7" : "#000000");
+  if (meta) meta.setAttribute("content", theme === "light" ? "#fafafa" : "#0a0a0a");
 }
 
 function currentTheme(): "light" | "dark" {
@@ -99,6 +99,9 @@ function setStatus(kind: "idle" | "ok" | "bad", title: string, body: string) {
   statusTitle.textContent = title;
   statusBody.textContent = body;
   copySigBtn.hidden = !(kind === "ok" && lastSig);
+  statusEl.classList.remove("is-updating");
+  void statusEl.offsetWidth;
+  statusEl.classList.add("is-updating");
 }
 
 function sync() {
@@ -210,6 +213,14 @@ function applyScenario(id: string) {
     s.intentAmount;
   document.querySelector<HTMLInputElement>("#expiresAt")!.value = "0";
   scenarioHint.textContent = s.hint;
+  scenarioHint.classList.remove("is-switching");
+  void scenarioHint.offsetWidth;
+  scenarioHint.classList.add("is-switching");
+  document.querySelectorAll(".panel").forEach((el) => {
+    el.classList.remove("is-switching");
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add("is-switching");
+  });
   document.querySelectorAll(".preset").forEach((p) => p.classList.remove("active"));
   document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
   policy = null;
@@ -420,21 +431,14 @@ tryWrongBtn.addEventListener("click", () => {
   trySignBtn.click();
 });
 
-window
-  .matchMedia("(prefers-color-scheme: light)")
-  .addEventListener("change", (e) => {
-    if (!localStorage.getItem("cs-theme")) {
-      setTheme(e.matches ? "light" : "dark");
-    }
-  });
-
 document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
 refreshHints();
 sync();
 
 if (live) {
   modeBadge.dataset.mode = "live";
-  modeBadge.textContent = "Live TEE";
+  modeBadge.innerHTML =
+    '<span class="mode-dot" aria-hidden="true"></span>Live TEE';
   setStatus(
     "idle",
     "Live Coston2 TEE",
@@ -442,7 +446,8 @@ if (live) {
   );
 } else {
   modeBadge.dataset.mode = "demo";
-  modeBadge.textContent = "Demo";
+  modeBadge.innerHTML =
+    '<span class="mode-dot" aria-hidden="true"></span>Demo';
   setStatus(
     "idle",
     "Demo mode",
