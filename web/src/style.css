@@ -204,8 +204,10 @@ svg {
 
 .logo-mark {
   display: block;
-  border-radius: 7px;
-  box-shadow: 0 0 0 1px var(--line), 0 0 24px color-mix(in srgb, var(--brand) 35%, transparent);
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--brand) 45%, transparent));
 }
 
 .nav-actions {
