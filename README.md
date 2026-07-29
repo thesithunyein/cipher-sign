@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo-mark.svg" alt="CipherSign" width="80" height="80" />
+  <img src="docs/logo-mark.png" alt="CipherSign" width="88" height="88" />
 </p>
 
 <h1 align="center">CipherSign</h1>
