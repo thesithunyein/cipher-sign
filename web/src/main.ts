@@ -87,7 +87,7 @@ function setTheme(theme: "light" | "dark") {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("cs-theme", theme);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", theme === "light" ? "#fafafa" : "#0a0a0a");
+  if (meta) meta.setAttribute("content", theme === "light" ? "#fafafa" : "#09090b");
 }
 
 function currentTheme(): "light" | "dark" {
@@ -226,9 +226,9 @@ function applyScenario(id: string) {
   policy = null;
   lastSig = "";
   policyChip.textContent = "Unlocked";
-  policyChip.className = "chip wait";
+  policyChip.className = "chip";
   signChip.textContent = "Waiting";
-  signChip.className = "chip wait";
+  signChip.className = "chip";
   refreshHints();
   sync();
   setStatus("idle", "Ready", "Lock a policy, then sign.");
@@ -324,7 +324,7 @@ setPolicyBtn.addEventListener("click", async () => {
     policyChip.textContent = "Locked";
     policyChip.className = "chip ok";
     signChip.textContent = "Waiting";
-    signChip.className = "chip wait";
+    signChip.className = "chip";
     sync();
     setStatus(
       "ok",
@@ -437,20 +437,18 @@ sync();
 
 if (live) {
   modeBadge.dataset.mode = "live";
-  modeBadge.innerHTML =
-    '<span class="mode-dot" aria-hidden="true"></span>Live TEE';
+  modeBadge.textContent = "Live TEE";
   setStatus(
     "idle",
     "Live Coston2 TEE",
-    "Seed key once (npm run live:smoke), then lock policy and sign."
+    "Connected to FCC /direct. Lock policy, then sign."
   );
 } else {
-  modeBadge.dataset.mode = "demo";
-  modeBadge.innerHTML =
-    '<span class="mode-dot" aria-hidden="true"></span>Demo';
+  modeBadge.dataset.mode = "preview";
+  modeBadge.textContent = "Preview";
   setStatus(
     "idle",
-    "Demo mode",
-    "Same policy rules as the TEE (allowlist + cap + expiry). Live Coston2 when VITE_DIRECT_URL is set."
+    "Policy preview",
+    "Same allowlist + cap + expiry rules as the enclave. Live TEE proof is in the demo video and npm run live:smoke."
   );
 }

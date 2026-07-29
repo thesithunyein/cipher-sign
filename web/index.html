@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -7,8 +7,8 @@
       name="description"
       content="CipherSign — Flare TEE payout vault for FAssets bots and keepers. Sign only when policy allows."
     />
-    <meta name="theme-color" content="#fafafa" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="color-scheme" content="dark light" />
     <title>CipherSign</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
@@ -23,31 +23,26 @@
     <script>
       (() => {
         const saved = localStorage.getItem("cs-theme");
-        const theme = saved === "dark" || saved === "light" ? saved : "light";
+        const theme = saved === "light" || saved === "dark" ? saved : "dark";
         document.documentElement.dataset.theme = theme;
         const meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute("content", theme === "light" ? "#fafafa" : "#0a0a0a");
+        if (meta) meta.setAttribute("content", theme === "light" ? "#fafafa" : "#09090b");
       })();
     </script>
   </head>
   <body>
     <div class="page-bg" aria-hidden="true">
-      <div class="orb orb-a"></div>
-      <div class="orb orb-b"></div>
-      <div class="orb orb-c"></div>
-      <div class="grid-fade"></div>
+      <div class="glow"></div>
+      <div class="grain"></div>
     </div>
 
     <header class="nav reveal" style="--d: 0">
       <a class="logo" href="/">
-        <img src="/favicon.svg" width="28" height="28" alt="" class="logo-mark" />
+        <img src="/favicon.svg" width="26" height="26" alt="" class="logo-mark" />
         <span>CipherSign</span>
       </a>
       <div class="nav-actions">
-        <span class="mode-badge" id="modeBadge" data-mode="demo">
-          <span class="mode-dot" aria-hidden="true"></span>
-          Demo
-        </span>
+        <span class="mode-badge" id="modeBadge" data-mode="preview">Preview</span>
         <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Theme">
           <svg class="icon sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5" />
@@ -74,7 +69,7 @@
 
     <main>
       <section class="intro reveal" style="--d: 1">
-        <p class="eyebrow">Flare Confidential Compute</p>
+        <p class="eyebrow">Flare · Confidential Compute</p>
         <h1>Payouts that cannot overspend.</h1>
         <p class="lede">
           Policy-gated signing for FAssets executors, Flare bots, and FTSO
@@ -83,39 +78,15 @@
         </p>
       </section>
 
-      <div class="ticker reveal" style="--d: 2" aria-hidden="true">
-        <div class="ticker-track">
-          <span class="pill green"><i></i>POLICY READY</span>
-          <span class="pill amber"><i></i>ALLOWLIST</span>
-          <span class="pill cyan"><i></i>COSTON2</span>
-          <span class="pill green"><i></i>TEE ONLINE</span>
-          <span class="pill amber"><i></i>CAP ENFORCED</span>
-          <span class="pill cyan"><i></i>ONCHAIN</span>
-          <span class="pill green"><i></i>OVERSPEND BLOCK</span>
-          <span class="pill amber"><i></i>DEMO MODE</span>
-          <span class="pill green"><i></i>POLICY READY</span>
-          <span class="pill amber"><i></i>ALLOWLIST</span>
-          <span class="pill cyan"><i></i>COSTON2</span>
-          <span class="pill green"><i></i>TEE ONLINE</span>
-          <span class="pill amber"><i></i>CAP ENFORCED</span>
-          <span class="pill cyan"><i></i>ONCHAIN</span>
-          <span class="pill green"><i></i>OVERSPEND BLOCK</span>
-          <span class="pill amber"><i></i>DEMO MODE</span>
-        </div>
-      </div>
-
-      <section class="app reveal" style="--d: 3" aria-label="Vault" id="vault">
+      <section class="app reveal" style="--d: 2" aria-label="Vault" id="vault">
         <div class="segment" role="tablist" aria-label="Flare use case">
           <button type="button" class="seg active" data-scenario="fassets" role="tab" aria-selected="true">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             FAssets
           </button>
           <button type="button" class="seg" data-scenario="bot" role="tab" aria-selected="false">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="8" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M9 8V6a3 3 0 0 1 6 0v2M12 12v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             Bot
           </button>
           <button type="button" class="seg" data-scenario="ftso" role="tab" aria-selected="false">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15v4M12 11v8M16 8v11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             FTSO
           </button>
         </div>
@@ -125,11 +96,8 @@
 
         <div class="panel" id="policyPanel">
           <div class="panel-top">
-            <h2>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
-              Policy
-            </h2>
-            <span class="chip wait" id="policyChip">Unlocked</span>
+            <h2>Policy</h2>
+            <span class="chip" id="policyChip">Unlocked</span>
           </div>
 
           <label>
@@ -163,19 +131,13 @@
             <button type="button" class="preset" data-expire="86400">24 hours</button>
           </div>
 
-          <button type="button" id="setPolicy" class="btn">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.6"/><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/></svg>
-            Lock policy
-          </button>
+          <button type="button" id="setPolicy" class="btn">Lock policy</button>
         </div>
 
         <div class="panel" id="requestPanel">
           <div class="panel-top">
-            <h2>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 5 5L20 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Request
-            </h2>
-            <span class="chip wait" id="signChip">Waiting</span>
+            <h2>Request</h2>
+            <span class="chip" id="signChip">Waiting</span>
           </div>
 
           <label>
@@ -203,27 +165,14 @@
           </div>
 
           <div class="actions">
-            <button type="button" id="trySign" class="btn" disabled>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h12M12 6l6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Sign
-            </button>
-            <button type="button" id="tryBad" class="btn quiet" disabled>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5M12 16.5v.5M5.2 19h13.6L12 5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Overspend
-            </button>
-            <button type="button" id="tryWrong" class="btn quiet" disabled>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="m9 9 6 6M15 9l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-              Wrong addr
-            </button>
+            <button type="button" id="trySign" class="btn" disabled>Sign</button>
+            <button type="button" id="tryBad" class="btn quiet" disabled>Overspend</button>
+            <button type="button" id="tryWrong" class="btn quiet" disabled>Wrong addr</button>
           </div>
         </div>
 
         <div class="status" id="status" data-kind="idle">
-          <div class="status-icon" aria-hidden="true">
-            <svg class="i-idle" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/></svg>
-            <svg class="i-ok" viewBox="0 0 24 24" fill="none"><path d="m6.5 12.5 3.5 3.5 7.5-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <svg class="i-bad" viewBox="0 0 24 24" fill="none"><path d="m8 8 8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          </div>
+          <div class="status-mark" aria-hidden="true"></div>
           <div>
             <strong id="statusTitle">Ready</strong>
             <span id="statusBody">Lock a policy, then sign.</span>
@@ -235,7 +184,7 @@
       </section>
     </main>
 
-    <footer class="reveal" style="--d: 4">
+    <footer class="reveal" style="--d: 3">
       <span>Flare Summer Signal · Bounty 2</span>
       <div class="footer-links">
         <a
@@ -244,6 +193,7 @@
           rel="noreferrer"
           >Coston2</a
         >
+        <a href="https://youtu.be/ZQVAkcT0Z08" target="_blank" rel="noreferrer">Video</a>
         <a href="https://dorahacks.io/buidl/47182/" target="_blank" rel="noreferrer">BUIDL</a>
       </div>
     </footer>

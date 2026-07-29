@@ -28,7 +28,7 @@ Built for Flare-today operators: FAssets executor fee vaults, keeper/bot payouts
 - **Network:** Flare Testnet Coston2 (chain id 114)  
 - **BUIDL:** https://dorahacks.io/buidl/47182/  
 
-**Note for judges:** Public Vercel defaults to **Demo mode** (same policy rules in-browser). Live policy-gated `KEY/UPDATE` → `SET_POLICY` → `SIGN` is proven via FCC `/direct` on Coston2 (`SIMULATED_TEE=true`, `CHAIN_ID=114`; see `npm run live:smoke`). Set `VITE_DIRECT_URL` + `VITE_DIRECT_API_KEY` (public tunnel to :6674) for hosted Live TEE.
+**Note for judges:** Public Vercel defaults to **Policy preview** (same allowlist/cap/expiry rules in-browser). Live policy-gated `KEY/UPDATE` → `SET_POLICY` → `SIGN` is proven via FCC `/direct` on Coston2 (`SIMULATED_TEE=true`, `CHAIN_ID=114`; see `npm run live:smoke` and the demo video). Set `VITE_DIRECT_URL` + `VITE_DIRECT_API_KEY` (public tunnel to :6674) for hosted Live TEE.
 
 ## How it uses Flare
 
