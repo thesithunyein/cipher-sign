@@ -29,7 +29,9 @@ Built for **Flare-today users**: FAssets executor fees, keeper/bot payouts, and 
 
 Policy is enforced **inside an attested Flare TEE**, not a mutable backend.
 
-**Try it:** [cipher-sign.vercel.app](https://cipher-sign.vercel.app) · [BUIDL](https://dorahacks.io/buidl/47182/) · [video](https://youtu.be/ZQVAkcT0Z08)
+**Try it:** [cipher-sign.vercel.app](https://cipher-sign.vercel.app) · [live TEE video](https://youtu.be/ZQVAkcT0Z08) · [BUIDL](https://dorahacks.io/buidl/47182/)
+
+Judges: Vercel = policy UX (Preview). Live FCC `/direct` proof = video + `npm run live:smoke`.
 
 ---
 

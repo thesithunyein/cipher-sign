@@ -449,6 +449,6 @@ if (live) {
   setStatus(
     "idle",
     "Policy preview",
-    "Same allowlist + cap + expiry rules as the enclave. Live TEE proof is in the demo video and npm run live:smoke."
+    "Same enclave rules (allowlist + cap + expiry). For live Coston2 TEE proof, open Watch live TEE proof above."
   );
 }

@@ -311,6 +311,56 @@ main {
   font-weight: 400;
 }
 
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+}
+
+.cta-row .btn {
+  text-decoration: none;
+}
+
+.evidence {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.evidence a {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: -0.01em;
+  transition: border-color 0.15s var(--ease), color 0.15s var(--ease),
+    background 0.15s var(--ease);
+}
+
+.evidence a span {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.evidence a:hover {
+  border-color: var(--line-strong);
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.evidence a:hover span {
+  color: var(--brand);
+}
+
 .app {
   display: grid;
   gap: 0.85rem;
@@ -698,6 +748,10 @@ footer a:hover {
     margin-bottom: 1.15rem;
   }
 
+  .evidence {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .row {
     grid-template-columns: 1fr;
   }
@@ -709,6 +763,11 @@ footer a:hover {
 
   .btn {
     width: 100%;
+  }
+
+  .cta-row .btn {
+    width: auto;
+    flex: 1 1 auto;
   }
 }
 

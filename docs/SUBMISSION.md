@@ -66,5 +66,17 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 ## Traction
 
 - Tester ask + log: [FEEDBACK.md](FEEDBACK.md)  
-- Telegram / X: ask posted in Flare Hackathon Club; collect named replies before judging  
+- Admin feedback: Kristaps (payout-policy use case) · Quantic (Flare-today user → FAssets/bots/FTSO reframe)  
+- DoraHacks update paste: [DORAHACKS_PASTE.md](DORAHACKS_PASTE.md)  
+- Telegram / X tester ask: posted; collect named replies before Aug 14  
 - Pilot users: _(add as they reply)_  
+
+## Judge map (Bounty 2)
+
+| Criterion | Where to look |
+|---|---|
+| Usefulness | FAssets / Bot / FTSO scenarios on Vercel |
+| Flare integration | InstructionSender + TEE ops · video live `/direct` |
+| Technical execution | App works · 29/29 tests · overspend / wrong-addr rejects |
+| New work | Allowlist policy + gated SIGN + product UI |
+| Clarity / future | README · SUBMISSION · roadmap |
