@@ -1,51 +1,100 @@
 <p align="center">
-  <img src="docs/logo.svg" alt="CipherSign mark" width="64" height="64" />
+  <img src="docs/logo-mark.svg" alt="CipherSign" width="80" height="80" />
 </p>
 
 <h1 align="center">CipherSign</h1>
 
 <p align="center">
-  <strong>Payouts that cannot overspend.</strong><br/>
-  Policy-gated confidential signing on Flare.<br/>
-  Keys stay in a TEE. Signatures only release when allowlist, cap, and expiry say yes.
+  <em>Flare · Confidential Compute</em><br/>
+  <strong>Payouts that cannot overspend.</strong>
 </p>
 
 <p align="center">
-  <a href="https://cipher-sign.vercel.app"><img src="https://img.shields.io/badge/App-cipher--sign.vercel.app-8B5CF6?style=flat-square&labelColor=0B0B12" alt="Live app" /></a>
-  <a href="https://dorahacks.io/buidl/47182/"><img src="https://img.shields.io/badge/DoraHacks-Bounty%202-A78BFA?style=flat-square&labelColor=0B0B12" alt="BUIDL" /></a>
-  <img src="https://img.shields.io/badge/Tests-29%2F29-30d158?style=flat-square&labelColor=0B0B12" alt="Tests" />
-  <img src="https://img.shields.io/badge/Network-Coston2-111111?style=flat-square&labelColor=0B0B12" alt="Coston2" />
+  Policy-gated signing for FAssets executors, Flare bots, and FTSO forwarders.<br/>
+  Keys stay in a TEE. Allowlist, cap, and expiry are enforced in the enclave.
 </p>
 
 <p align="center">
-  <a href="https://cipher-sign.vercel.app">App</a> ·
-  <a href="https://dorahacks.io/buidl/47182/">BUIDL</a> ·
-  <a href="https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9">Coston2</a> ·
-  <a href="docs/SUBMISSION.md">Submission</a>
+  <a href="https://cipher-sign.vercel.app"><strong>Open live product →</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://dorahacks.io/buidl/47182/">DoraHacks</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/thesithunyein/cipher-sign">GitHub</a>
+</p>
+
+<br/>
+
+<!-- Same link bar as the live app -->
+<table align="center" width="100%">
+  <tr>
+    <td align="center" width="33%">
+      <sub>NETWORK</sub><br/>
+      <a href="https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9"><strong>Coston2</strong></a><br/>
+      <code>InstructionSender</code>
+    </td>
+    <td align="center" width="33%">
+      <sub>SOURCE</sub><br/>
+      <a href="https://github.com/thesithunyein/cipher-sign"><strong>GitHub</strong></a><br/>
+      <code>29 / 29 tests</code>
+    </td>
+    <td align="center" width="33%">
+      <sub>SUBMISSION</sub><br/>
+      <a href="https://dorahacks.io/buidl/47182/"><strong>DoraHacks</strong></a><br/>
+      <code>Bounty 2</code>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <a href="https://cipher-sign.vercel.app">
+    <img src="docs/app-hero.png" alt="CipherSign live app — Live TEE, product bar, FAssets vault" width="920" />
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Live%20TEE-30d158?style=for-the-badge&labelColor=0B0B12" alt="Live TEE" />
+  <img src="https://img.shields.io/badge/App-cipher--sign.vercel.app-8B5CF6?style=for-the-badge&labelColor=0B0B12" alt="App" />
+  <img src="https://img.shields.io/badge/Tests-29%2F29-30d158?style=for-the-badge&labelColor=0B0B12" alt="Tests" />
 </p>
 
 ---
 
-## Product
+## The product
 
-Hot wallets sign anything. CipherSign only signs under a locked policy:
+A hot wallet signs anything you ask. That is fine for demos — and fatal for payout automation.
 
-- allowlist (up to 5 recipients)
-- max amount
-- expiry
+**CipherSign** holds the key inside a Flare TEE. Every signature request is gated by a locked policy **in the enclave**, not in a mutable backend:
 
-Built for **Flare-today operators**: FAssets executor fees, keeper/bot payouts, and FTSO reward forwarding.
+| Rule | What it stops |
+|------|----------------|
+| **Allowlist** | Payments to unknown recipients |
+| **Max amount** | Overspend / drain |
+| **Expiry** | Forever-valid keys |
 
-Policy is enforced **inside an attested Flare TEE**, not a mutable backend.
+Break the rules → **no signature**. Period.
 
-| Mode | What judges see |
-|------|-----------------|
-| **Live TEE** | Hosted app hits FCC `/direct` when the operator tunnel is up |
-| **Preview** | Same allowlist / cap / expiry rules in-browser if Live is offline |
+### Built for Flare operators today
+
+| Mode | Job |
+|------|-----|
+| **FAssets** | Executor fee vault — fixed fee recipient + hard cap |
+| **Bot** | Keeper / automation payouts without a drainable hot key |
+| **FTSO** | Reward forwarder locked to one payout address |
 
 ---
 
-## Architecture
+## Try it (60 seconds)
+
+1. Open **[cipher-sign.vercel.app](https://cipher-sign.vercel.app)** — badge should read **Live TEE** when the operator node is up  
+2. Pick **FAssets / Bot / FTSO**  
+3. **Lock policy** → **Sign** a valid payout  
+4. Hit **Overspend** or **Wrong addr** — the vault refuses  
+
+If Live is offline, **Preview** still runs the same allowlist / cap / expiry rules so the product never goes dark for judges.
+
+---
+
+## How it uses Flare
 
 ```mermaid
 flowchart LR
@@ -53,67 +102,71 @@ flowchart LR
   B --> C[TeeExtensionRegistry]
   C --> D[CipherSign TEE]
   D -->|policy OK| E[ECDSA signature]
-  D -->|fail| F[Reject]
+  D -->|fail| F[Reject — no key use]
 ```
+
+Inside the enclave:
+
+1. `KEY / UPDATE` — create the signing key  
+2. `KEY / SET_POLICY` — lock allowlist, max amount, expiry  
+3. `KEY / SIGN` — release ECDSA only if the intent passes  
 
 ```mermaid
 sequenceDiagram
-  participant C as Client
-  participant T as CipherSign TEE
-  C->>T: SET_POLICY
-  C->>T: SIGN intent
-  alt allowed
-    T-->>C: signature
-  else blocked
-    T-->>C: reject
-  end
+  participant Ops as Operator
+  participant TEE as CipherSign TEE
+  Ops->>TEE: SET_POLICY
+  Ops->>TEE: SIGN valid intent
+  TEE-->>Ops: signature
+  Ops->>TEE: SIGN over-cap / wrong recipient
+  TEE-->>Ops: reject
 ```
 
 ---
 
-## Coston2
+## On-chain proof (Coston2)
 
 | | |
 |---|---|
+| Network | Flare Testnet Coston2 (`114`) |
 | InstructionSender | [`0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9`](https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9) |
 | EXTENSION_ID | `0x…0665` |
 | Deployer | `0xc73Be03499616FFaA79315673e620AACfbb920C4` |
 
 ---
 
-## Bounty 2 — Confidential Compute
+## Why this wins Bounty 2
 
-| Lens | CipherSign |
-|------|------------|
-| Useful | FAssets fees / Flare bots / FTSO forwarders without drainable hot keys |
-| Flare-native | InstructionSender → registry → TEE extension |
-| New work | Allowlist policy + gated `SIGN` + Flare product UI |
-| Evidence | 29/29 tests · Coston2 deploy · Live / Preview app |
+| Criterion | CipherSign |
+|-----------|------------|
+| **Useful** | Real Flare jobs — FAssets fees, bots, FTSO forwarders |
+| **Flare-native** | InstructionSender → registry → attested TEE extension |
+| **Technical** | Policy-gated `SIGN`, 29/29 tests, attack buttons that fail closed |
+| **New work** | Allowlist model + Live product UI — not Hello World |
+| **Clarity** | One live URL, one vault, one story |
 
 ```bash
-cd web && npm ci && npm run dev
-cd tee/typescript && npm test
+cd web && npm ci && npm run dev          # product UI
+cd tee/typescript && npm test            # 29/29
 ```
 
-Docs: [Architecture](docs/ARCHITECTURE.md) · [Submission](docs/SUBMISSION.md) · [Setup](docs/SETUP.md) · [Demo script](docs/DEMO_SCRIPT.md)
+Docs: [Architecture](docs/ARCHITECTURE.md) · [Setup](docs/SETUP.md) · [Demo script](docs/DEMO_SCRIPT.md) · [Submission](docs/SUBMISSION.md)
 
 ---
 
 ## Layout
 
 ```text
-cipher-sign/
-├── docs/                 # Architecture, submission, setup, demo script
-├── tee/typescript/       # Policy-gated TEE extension (KEY/UPDATE, SET_POLICY, SIGN)
-├── tee/contract/         # InstructionSender (Coston2)
-├── web/                  # Product UI (FAssets / Bot / FTSO)
-└── README.md
+web/                 Live product — FAssets / Bot / FTSO vault
+tee/typescript/      TEE extension — UPDATE · SET_POLICY · SIGN
+tee/contract/        InstructionSender (Coston2)
+docs/                Architecture · setup · submission pack
 ```
 
-Product code: **`web/`** + **`tee/typescript/`**. `tee/go`, `tee/python`, and `tee/skills` are upstream Flare FCC scaffold.
+`tee/go`, `tee/python`, and `tee/skills` are upstream Flare FCC scaffold.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Upstream FCC scaffold © Flare Foundation.
+MIT — [LICENSE](LICENSE). Upstream FCC scaffold © Flare Foundation.
