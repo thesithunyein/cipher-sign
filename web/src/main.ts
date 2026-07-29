@@ -449,6 +449,6 @@ if (live) {
   setStatus(
     "idle",
     "Policy preview",
-    "Same enclave rules (allowlist + cap + expiry). For live Coston2 TEE proof, open Watch live TEE proof above."
+    "Same enclave rules (allowlist + cap + expiry). Live Coston2 TEE when VITE_DIRECT_* is set."
   );
 }
