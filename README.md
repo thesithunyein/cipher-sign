@@ -15,14 +15,6 @@
 </p>
 
 <p align="center">
-  <a href="https://cipher-sign.vercel.app"><strong>Open live product →</strong></a>
-  &nbsp;·&nbsp;
-  <a href="https://dorahacks.io/buidl/47182/">DoraHacks</a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/thesithunyein/cipher-sign">GitHub</a>
-</p>
-
-<p align="center">
   <a href="https://cipher-sign.vercel.app">
     <img src="docs/app-hero.png" alt="CipherSign live app — Live TEE, product bar, FAssets vault" width="920" />
   </a>
