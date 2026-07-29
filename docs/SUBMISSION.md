@@ -23,12 +23,12 @@ Built for Flare-today operators: FAssets executor fee vaults, keeper/bot payouts
 ## Demo
 
 - **App:** https://cipher-sign.vercel.app  
-- **Video:** https://youtu.be/ZQVAkcT0Z08 _(re-record after polish if needed; follow [DEMO_SCRIPT.md](DEMO_SCRIPT.md))_  
 - **Repo:** https://github.com/thesithunyein/cipher-sign  
 - **Network:** Flare Testnet Coston2 (chain id 114)  
 - **BUIDL:** https://dorahacks.io/buidl/47182/  
+- **Video:** _(re-record ≤90s Live TEE per [DEMO_SCRIPT.md](DEMO_SCRIPT.md); prior YouTube link is down)_  
 
-**Note for judges:** Public Vercel defaults to **Policy preview** (same allowlist/cap/expiry rules in-browser). Live policy-gated `KEY/UPDATE` → `SET_POLICY` → `SIGN` is proven via FCC `/direct` on Coston2 (`SIMULATED_TEE=true`, `CHAIN_ID=114`; see `npm run live:smoke` and the demo video). Set `VITE_DIRECT_URL` + `VITE_DIRECT_API_KEY` (public tunnel to :6674) for hosted Live TEE.
+**Note for judges:** When the operator tunnel is up, Vercel shows **Live TEE** (same-origin `/fcc` → FCC `/direct` on Coston2, `SIMULATED_TEE=true`, `CHAIN_ID=114`). If Live is offline, the app falls back to **Policy preview** (identical allowlist / cap / expiry rules in-browser). Smoke: `npm run live:smoke`.
 
 ## How it uses Flare
 
@@ -76,7 +76,7 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 | Criterion | Where to look |
 |---|---|
 | Usefulness | FAssets / Bot / FTSO scenarios on Vercel |
-| Flare integration | InstructionSender + TEE ops · video live `/direct` |
+| Flare integration | InstructionSender + TEE ops · Live `/direct` on app when tunnel up |
 | Technical execution | App works · 29/29 tests · overspend / wrong-addr rejects |
 | New work | Allowlist policy + gated SIGN + product UI |
 | Clarity / future | README · SUBMISSION · roadmap |

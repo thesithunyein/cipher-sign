@@ -26,26 +26,24 @@ How it uses Flare
 InstructionSender → TeeExtensionRegistry.sendInstructions → CipherSign TEE extension on Coston2. Direct API (POST /direct) for reliable demos per Flare FCC guidance.
 
 Evidence for judges
-App (policy UX): https://cipher-sign.vercel.app
-Live TEE video: https://youtu.be/ZQVAkcT0Z08
+App: https://cipher-sign.vercel.app (Live TEE when operator tunnel is up; otherwise Policy preview with the same rules)
 Repo: https://github.com/thesithunyein/cipher-sign
 Network: Flare Testnet Coston2 (chain id 114)
 InstructionSender: 0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9
 EXTENSION_ID: 0x…0665
 Tests: 29/29
-
-Public Vercel is Policy preview (same enclave rules in-browser). Live UPDATE → SET_POLICY → SIGN and over-cap / wrong-recipient reject are proven on FCC /direct (CHAIN_ID=114) in the video and npm run live:smoke.
+Demo video: re-record ≤90s Live UPDATE → SET_POLICY → SIGN + over-cap / wrong-recipient reject (see docs/DEMO_SCRIPT.md)
 
 ## Links checklist
 
 - Website: https://cipher-sign.vercel.app
-- Demo video: https://youtu.be/ZQVAkcT0Z08
+- Demo video: _(upload new recording; old YouTube is down)_
 - GitHub: https://github.com/thesithunyein/cipher-sign
 - Social: your X post
 
 ## After paste
 
-1. Re-record ≤90s with new UI (docs/DEMO_SCRIPT.md) and replace YouTube if needed  
+1. Re-record ≤90s with current UI (docs/DEMO_SCRIPT.md) and paste the new YouTube/Loom URL  
 2. Re-post tester ask in Flare Hackathon Club  
 3. Log every reply in docs/FEEDBACK.md  
 4. Ask testers to Bookmark ↑ the BUIDL  

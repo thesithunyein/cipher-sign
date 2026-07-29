@@ -324,41 +324,67 @@ main {
 
 .evidence {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin: 0 0 1.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 1.65rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(10px);
 }
 
 .evidence a {
   display: grid;
-  gap: 0.15rem;
-  padding: 0.7rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  color: var(--muted);
-  font-size: 0.78rem;
-  letter-spacing: -0.01em;
-  transition: border-color 0.15s var(--ease), color 0.15s var(--ease),
-    background 0.15s var(--ease);
+  gap: 0.12rem;
+  padding: 0.85rem 1rem;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  box-shadow: none;
+  color: var(--faint);
+  text-decoration: none;
+  transition: background 0.18s var(--ease), color 0.18s var(--ease);
 }
 
-.evidence a span {
+.evidence a:last-child {
+  border-right: 0;
+}
+
+.evidence .ev-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.evidence .ev-title {
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.evidence .ev-meta {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
   letter-spacing: -0.02em;
+  color: var(--muted);
 }
 
 .evidence a:hover {
-  border-color: var(--line-strong);
-  color: var(--brand);
   background: var(--brand-soft);
+  color: var(--brand);
 }
 
-.evidence a:hover span {
+.evidence a:hover .ev-label,
+.evidence a:hover .ev-meta {
   color: var(--brand);
+}
+
+.evidence a:hover .ev-title {
+  color: var(--brand-strong);
 }
 
 .app {
@@ -749,7 +775,16 @@ footer a:hover {
   }
 
   .evidence {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+  }
+
+  .evidence a {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .evidence a:last-child {
+    border-bottom: 0;
   }
 
   .row {
