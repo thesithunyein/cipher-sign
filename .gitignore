@@ -18,6 +18,7 @@ docs/TELEGRAM*.md
 docs/PROGRESS.md
 docs/CREATE_REPO.md
 docs/WIN_PATH.md
+docs/WIN_CHECKLIST.md
 docs/check-ready.ps1
 
 # Unused scaffolds (product path is TypeScript)

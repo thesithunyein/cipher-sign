@@ -131,8 +131,8 @@ try {
 }
 
 const policy = encodeAbiParameters(
-  [{ type: "address" }, { type: "uint256" }, { type: "uint256" }],
-  [recipient, 1_000_000n, 0n]
+  [{ type: "address[]" }, { type: "uint256" }, { type: "uint256" }],
+  [[recipient], 1_000_000n, 0n]
 );
 const setP = await direct("KEY", "SET_POLICY", policy);
 console.log("SET_POLICY", setP);

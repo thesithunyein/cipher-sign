@@ -8,7 +8,7 @@
 import { encodeAbiParameters, type Hex } from "viem";
 
 export type SignPolicy = {
-  allowedRecipient: `0x${string}`;
+  allowedRecipients: `0x${string}`[];
   maxAmount: bigint;
   expiresAt: bigint;
 };
@@ -23,11 +23,11 @@ export type SignIntent = {
 export function encodePolicy(policy: SignPolicy): Hex {
   return encodeAbiParameters(
     [
-      { type: "address" },
+      { type: "address[]" },
       { type: "uint256" },
       { type: "uint256" },
     ],
-    [policy.allowedRecipient, policy.maxAmount, policy.expiresAt]
+    [policy.allowedRecipients, policy.maxAmount, policy.expiresAt]
   );
 }
 

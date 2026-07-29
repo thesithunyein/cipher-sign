@@ -13,20 +13,31 @@ type Policy = SignPolicy;
 
 const SCENARIOS: Record<
   string,
-  { recipient: `0x${string}`; maxAmount: string; intentAmount: string }
+  {
+    hint: string;
+    allowlist: `0x${string}`[];
+    maxAmount: string;
+    intentAmount: string;
+  }
 > = {
-  payroll: {
-    recipient: "0x1111111111111111111111111111111111111111",
+  fassets: {
+    hint: "FAssets executor fee vault — allowlisted fee recipient + hard cap.",
+    allowlist: [
+      "0x1111111111111111111111111111111111111111",
+      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    ],
     maxAmount: "1000000",
     intentAmount: "500000",
   },
-  otc: {
-    recipient: "0x2222222222222222222222222222222222222222",
+  bot: {
+    hint: "Flare keeper / bot payout — only the ops wallet can receive signed payouts.",
+    allowlist: ["0x2222222222222222222222222222222222222222"],
     maxAmount: "5000000",
     intentAmount: "2500000",
   },
-  treasury: {
-    recipient: "0x3333333333333333333333333333333333333333",
+  ftso: {
+    hint: "FTSO reward forwarder — provider rewards only to the locked payout address.",
+    allowlist: ["0x3333333333333333333333333333333333333333"],
     maxAmount: "250000",
     intentAmount: "100000",
   },
@@ -36,9 +47,11 @@ const ERRORS: Record<string, string> = {
   "no private key stored": "No key loaded.",
   "policy expired": "Policy expired.",
   "intent deadline passed": "Deadline passed.",
-  "recipient not allowed by policy": "Recipient not allowed.",
+  "recipient not allowed by policy": "Recipient not allowlisted.",
   "amount exceeds policy maxAmount": "Amount exceeds max.",
 };
+
+const OUTSIDER = "0x9999999999999999999999999999999999999999" as const;
 
 let policy: Policy | null = null;
 let lastSig = "";
@@ -52,11 +65,14 @@ const statusBody = document.querySelector<HTMLElement>("#statusBody")!;
 const setPolicyBtn = document.querySelector<HTMLButtonElement>("#setPolicy")!;
 const trySignBtn = document.querySelector<HTMLButtonElement>("#trySign")!;
 const tryBadBtn = document.querySelector<HTMLButtonElement>("#tryBad")!;
+const tryWrongBtn = document.querySelector<HTMLButtonElement>("#tryWrong")!;
 const copySigBtn = document.querySelector<HTMLButtonElement>("#copySig")!;
 const toastEl = document.querySelector<HTMLElement>("#toast")!;
 const themeToggle = document.querySelector<HTMLButtonElement>("#themeToggle")!;
 const maxHint = document.querySelector<HTMLElement>("#maxHint")!;
 const amountHint = document.querySelector<HTMLElement>("#amountHint")!;
+const scenarioHint = document.querySelector<HTMLElement>("#scenarioHint")!;
+const modeBadge = document.querySelector<HTMLElement>("#modeBadge")!;
 const live = liveConfig();
 
 function toast(message: string) {
@@ -89,6 +105,7 @@ function sync() {
   const ready = Boolean(policy) || Boolean(live);
   trySignBtn.disabled = !ready;
   tryBadBtn.disabled = !ready;
+  tryWrongBtn.disabled = !ready;
 }
 
 function fmt(raw: string) {
@@ -116,6 +133,13 @@ function short(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
+function parseAllowlist(raw: string): `0x${string}`[] {
+  return raw
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean) as `0x${string}`[];
+}
+
 async function copyText(text: string, okMsg: string) {
   try {
     await navigator.clipboard.writeText(text);
@@ -127,9 +151,9 @@ async function copyText(text: string, okMsg: string) {
 
 function readPolicy(): Policy {
   return {
-    allowedRecipient: (
-      document.querySelector<HTMLInputElement>("#recipient")!.value || ""
-    ).trim() as `0x${string}`,
+    allowedRecipients: parseAllowlist(
+      document.querySelector<HTMLInputElement>("#allowlist")!.value || ""
+    ),
     maxAmount: BigInt(
       document.querySelector<HTMLInputElement>("#maxAmount")!.value || "0"
     ),
@@ -162,9 +186,10 @@ function check(p: Policy, intent: SignIntent): string | null {
   if (p.expiresAt !== 0n && now > p.expiresAt) return "policy expired";
   if (intent.deadline !== 0n && now > intent.deadline)
     return "intent deadline passed";
-  if (intent.recipient.toLowerCase() !== p.allowedRecipient.toLowerCase()) {
-    return "recipient not allowed by policy";
-  }
+  const allowed = p.allowedRecipients.some(
+    (a) => a.toLowerCase() === intent.recipient.toLowerCase()
+  );
+  if (!allowed) return "recipient not allowed by policy";
   if (intent.amount > p.maxAmount) return "amount exceeds policy maxAmount";
   return null;
 }
@@ -176,13 +201,15 @@ function fakeSig(intentHex: Hex) {
 function applyScenario(id: string) {
   const s = SCENARIOS[id];
   if (!s) return;
-  document.querySelector<HTMLInputElement>("#recipient")!.value = s.recipient;
+  document.querySelector<HTMLInputElement>("#allowlist")!.value =
+    s.allowlist.join(", ");
   document.querySelector<HTMLInputElement>("#intentRecipient")!.value =
-    s.recipient;
+    s.allowlist[0];
   document.querySelector<HTMLInputElement>("#maxAmount")!.value = s.maxAmount;
   document.querySelector<HTMLInputElement>("#intentAmount")!.value =
     s.intentAmount;
   document.querySelector<HTMLInputElement>("#expiresAt")!.value = "0";
+  scenarioHint.textContent = s.hint;
   document.querySelectorAll(".preset").forEach((p) => p.classList.remove("active"));
   document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
   policy = null;
@@ -208,7 +235,7 @@ document.querySelectorAll<HTMLButtonElement>(".seg").forEach((btn) => {
     });
     btn.classList.add("active");
     btn.setAttribute("aria-selected", "true");
-    applyScenario(btn.dataset.scenario || "payroll");
+    applyScenario(btn.dataset.scenario || "fassets");
   });
 });
 
@@ -223,17 +250,22 @@ document.querySelectorAll<HTMLButtonElement>(".preset").forEach((btn) => {
   });
 });
 
-document.querySelector("#copyRecipient")!.addEventListener("click", () => {
+document.querySelector("#copyAllowlist")!.addEventListener("click", () => {
   void copyText(
-    document.querySelector<HTMLInputElement>("#recipient")!.value,
-    "Address copied"
+    document.querySelector<HTMLInputElement>("#allowlist")!.value,
+    "Allowlist copied"
   );
 });
 
 document.querySelector("#matchRecipient")!.addEventListener("click", () => {
-  const from = document.querySelector<HTMLInputElement>("#recipient")!.value;
-  document.querySelector<HTMLInputElement>("#intentRecipient")!.value = from;
-  toast("Matched policy recipient");
+  const list = parseAllowlist(
+    document.querySelector<HTMLInputElement>("#allowlist")!.value
+  );
+  if (list[0]) {
+    document.querySelector<HTMLInputElement>("#intentRecipient")!.value =
+      list[0];
+    toast("Matched first allowlisted address");
+  }
 });
 
 copySigBtn.addEventListener("click", () => {
@@ -244,11 +276,19 @@ document.querySelector("#maxAmount")!.addEventListener("input", refreshHints);
 document.querySelector("#intentAmount")!.addEventListener("input", refreshHints);
 
 setPolicyBtn.addEventListener("click", async () => {
-  const input = document.querySelector<HTMLInputElement>("#recipient")!;
+  const input = document.querySelector<HTMLInputElement>("#allowlist")!;
   const next = readPolicy();
-  input.classList.toggle("invalid", !isAddress(next.allowedRecipient));
-  if (!isAddress(next.allowedRecipient)) {
-    setStatus("bad", "Invalid address", "Check the recipient field.");
+  const valid =
+    next.allowedRecipients.length > 0 &&
+    next.allowedRecipients.length <= 5 &&
+    next.allowedRecipients.every(isAddress);
+  input.classList.toggle("invalid", !valid);
+  if (!valid) {
+    setStatus(
+      "bad",
+      "Invalid allowlist",
+      "Enter 1–5 valid 0x addresses, comma-separated."
+    );
     return;
   }
 
@@ -278,7 +318,7 @@ setPolicyBtn.addEventListener("click", async () => {
     setStatus(
       "ok",
       "Policy locked",
-      `${short(next.allowedRecipient)} · max ${next.maxAmount.toLocaleString("en-US")}`
+      `${next.allowedRecipients.length} addr · max ${next.maxAmount.toLocaleString("en-US")}`
     );
     toast("Policy locked");
   } catch (e) {
@@ -374,6 +414,12 @@ tryBadBtn.addEventListener("click", () => {
   trySignBtn.click();
 });
 
+tryWrongBtn.addEventListener("click", () => {
+  document.querySelector<HTMLInputElement>("#intentRecipient")!.value =
+    OUTSIDER;
+  trySignBtn.click();
+});
+
 window
   .matchMedia("(prefers-color-scheme: light)")
   .addEventListener("change", (e) => {
@@ -387,15 +433,19 @@ refreshHints();
 sync();
 
 if (live) {
+  modeBadge.dataset.mode = "live";
+  modeBadge.textContent = "Live TEE";
   setStatus(
     "idle",
-    "Live TEE connected",
+    "Live Coston2 TEE",
     "Seed key once (npm run live:smoke), then lock policy and sign."
   );
 } else {
+  modeBadge.dataset.mode = "demo";
+  modeBadge.textContent = "Demo";
   setStatus(
     "idle",
-    "Local policy engine",
-    "Set VITE_DIRECT_URL to hit the live Coston2 TEE stack."
+    "Demo mode",
+    "Same policy rules as the TEE (allowlist + cap + expiry). Live Coston2 when VITE_DIRECT_URL is set."
   );
 }

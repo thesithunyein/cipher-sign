@@ -133,7 +133,7 @@ describe("handlers integration", () => {
     // Step 2: Set policy
     const policyHex = bytesToHex(
       abiEncodePolicy({
-        allowedRecipient: recipient,
+        allowedRecipients: [recipient],
         maxAmount: 1_000_000n,
         expiresAt: 0n,
       })
@@ -214,7 +214,7 @@ describe("handlers integration", () => {
         stringToBytes32Hex("SET_POLICY"),
         bytesToHex(
           abiEncodePolicy({
-            allowedRecipient: recipient,
+            allowedRecipients: [recipient],
             maxAmount: 100n,
             expiresAt: 0n,
           })
@@ -242,6 +242,91 @@ describe("handlers integration", () => {
     expect(status).toBe(200);
     expect((resp as any).status).toBe(0);
     expect((resp as any).log).toContain("amount exceeds");
+  });
+
+  it("allows second allowlist recipient and rejects outsider", async () => {
+    const privKeyBytes = new Uint8Array(32);
+    privKeyBytes[31] = 0x02;
+    const { server, port } = await startMockNode(privKeyBytes);
+    mockServer = server;
+    setSignPort(String(port));
+
+    const srv = new Server(
+      "0",
+      String(port),
+      VERSION,
+      register,
+      reportState
+    );
+    const a = "0x1111111111111111111111111111111111111111";
+    const b = "0x2222222222222222222222222222222222222222";
+    const outsider = "0x3333333333333333333333333333333333333333";
+
+    await srv.handleRequestDirect(
+      "POST",
+      "/action",
+      makeActionBody(
+        stringToBytes32Hex("KEY"),
+        stringToBytes32Hex("UPDATE"),
+        bytesToHex(new TextEncoder().encode("encrypteddata"))
+      )
+    );
+    await srv.handleRequestDirect(
+      "POST",
+      "/action",
+      makeActionBody(
+        stringToBytes32Hex("KEY"),
+        stringToBytes32Hex("SET_POLICY"),
+        bytesToHex(
+          abiEncodePolicy({
+            allowedRecipients: [a, b],
+            maxAmount: 1000n,
+            expiresAt: 0n,
+          })
+        )
+      )
+    );
+
+    const ok = await srv.handleRequestDirect(
+      "POST",
+      "/action",
+      makeActionBody(
+        stringToBytes32Hex("KEY"),
+        stringToBytes32Hex("SIGN"),
+        bytesToHex(
+          abiEncodeIntent({
+            recipient: b,
+            amount: 50n,
+            deadline: 0n,
+            payloadHash:
+              "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          })
+        )
+      )
+    );
+    expect(ok[0]).toBe(200);
+    expect((ok[1] as any).status).toBe(1);
+
+    const bad = await srv.handleRequestDirect(
+      "POST",
+      "/action",
+      makeActionBody(
+        stringToBytes32Hex("KEY"),
+        stringToBytes32Hex("SIGN"),
+        bytesToHex(
+          abiEncodeIntent({
+            recipient: outsider,
+            amount: 50n,
+            deadline: 0n,
+            payloadHash:
+              "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          })
+        )
+      )
+    );
+    expect(bad[0]).toBe(200);
+    expect((bad[1] as any).status).toBe(0);
+    expect((bad[1] as any).log).toContain("recipient not allowed");
   });
 
   it("sign without key returns error", async () => {

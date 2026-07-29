@@ -23,13 +23,14 @@ export function abiDecodeTwo(data: Uint8Array): [Uint8Array, Uint8Array] {
 
 /** Policy stored inside the TEE (enforced before SIGN). */
 export type SignPolicy = {
-  allowedRecipient: `0x${string}`;
+  /** One or more allowed payout recipients (allowlist). */
+  allowedRecipients: `0x${string}`[];
   maxAmount: bigint;
   expiresAt: bigint; // unix seconds; 0 = no expiry
 };
 
 const policyParams = [
-  { type: "address" as const },
+  { type: "address[]" as const },
   { type: "uint256" as const },
   { type: "uint256" as const },
 ] as const;
@@ -37,7 +38,7 @@ const policyParams = [
 /** Encode policy for SET_POLICY messages. */
 export function abiEncodePolicy(policy: SignPolicy): Uint8Array {
   const encoded = encodeAbiParameters(policyParams, [
-    policy.allowedRecipient,
+    policy.allowedRecipients,
     policy.maxAmount,
     policy.expiresAt,
   ]);
@@ -46,12 +47,12 @@ export function abiEncodePolicy(policy: SignPolicy): Uint8Array {
 
 /** Decode policy from SET_POLICY originalMessage. */
 export function abiDecodePolicy(data: Uint8Array): SignPolicy {
-  const [allowedRecipient, maxAmount, expiresAt] = decodeAbiParameters(
+  const [allowedRecipients, maxAmount, expiresAt] = decodeAbiParameters(
     policyParams,
     bytesToHex(data) as Hex
   );
   return {
-    allowedRecipient: allowedRecipient as `0x${string}`,
+    allowedRecipients: [...(allowedRecipients as readonly `0x${string}`[])],
     maxAmount: maxAmount as bigint,
     expiresAt: expiresAt as bigint,
   };

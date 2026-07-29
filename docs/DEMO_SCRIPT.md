@@ -1,6 +1,6 @@
 # Screen record + voice (≤1:30) — one take
 
-Do **not** record Vercel for the TEE proof. Vercel is the public browse link (same policy rules).  
+Do **not** record Vercel for the TEE proof. Vercel is the public browse link (Demo mode = same policy rules).  
 Record **local live TEE** so judges see real `/direct`.
 
 ## Before you press Record (run once)
@@ -17,9 +17,9 @@ npm run live:smoke
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173**. Status should say **Live TEE connected**.
+Open **http://127.0.0.1:5173**. Badge should say **Live TEE**. Status: **Live Coston2 TEE**.
 
-If you see `NetworkError when attempting to fetch resource`, you are hitting `:6674` from the browser without the proxy — use `VITE_DIRECT_URL=/fcc` (see `.env.example`) and restart `npm run dev`.
+If you see `NetworkError when attempting to fetch resource`, use `VITE_DIRECT_URL=/fcc` (see `.env.example`) and restart `npm run dev`.
 
 Also open a second tab ready:
 
@@ -27,37 +27,37 @@ https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb02222
 
 ## On-screen path (practice once without voice)
 
-1. Payroll selected  
-2. **Lock policy** → status OK  
-3. **Sign** → Approved / signature  
-4. **Overspend** → Rejected (leave message visible ~2s)  
-5. Switch to explorer tab (InstructionSender address visible)
+1. **FAssets** tab selected  
+2. **Lock policy** → status OK (allowlist + cap)  
+3. **Sign** → Approved  
+4. **Overspend** → Blocked (~2s)  
+5. Reset amount / match recipient, then **Wrong addr** → Blocked  
+6. Switch to explorer tab (InstructionSender visible)
 
 ## Voice track (~90s) — speak while clicking
 
 **0:00–0:12**  
-CipherSign keeps signing keys inside a Flare TEE. Policy decides what can be signed — recipient, max amount, expiry.
+CipherSign is a Flare payout vault. The key lives in a TEE. It only signs when the allowlist, max amount, and expiry say yes.
 
 **0:12–0:28**  
-Hot wallets can sign anything. For agent payroll or OTC that is not safe. CipherSign enforces the rules inside the enclave, not a mutable backend.
+Built for Flare users today — FAssets executor fees, keeper bots, FTSO reward forwarders — so a compromised script cannot drain.
 
 **0:28–1:05** *(do the clicks)*  
-This is live against Coston2 FCC via `/direct` — not a UI mock. I lock SET_POLICY… request a signature… it passes. Over-cap attack… rejected by the TEE.
+This is live on Coston2 FCC via `/direct`. I lock the FAssets policy… sign passes… overspend blocked… wrong address blocked.
 
 **1:05–1:20**  
-On Flare: InstructionSender to TeeExtensionRegistry into our CipherSign extension. Ops UPDATE, SET_POLICY, SIGN. Twenty-eight unit tests. Deployed InstructionSender on Coston2.
+Flare path: InstructionSender to TeeExtensionRegistry into CipherSign. Ops UPDATE, SET_POLICY, SIGN. Deployed on Coston2.
 
 **1:20–1:30**  
-Demo and repo are public. Next: agent SDK and Protocol Managed Wallets. Built for Summer Signal Bounty 2 — Confidential Compute.
+Demo and repo are public. Summer Signal Bounty 2 — Confidential Compute.
 
 ## After export
 
-1. Upload unlisted YouTube (or Drive)  
+1. Upload YouTube  
 2. Paste URL into DoraHacks + `docs/SUBMISSION.md`  
-3. Keep https://cipher-sign.vercel.app and https://github.com/thesithunyein/cipher-sign in the description  
+3. Keep https://cipher-sign.vercel.app · https://dorahacks.io/buidl/47182/ · https://github.com/thesithunyein/cipher-sign  
 
 ## Do not
 
-- Record only Vercel (no live TEE env there)  
-- Apologize about tunnels / FCC instability  
-- Show terminal errors or `.env` secrets  
+- Record only the Vercel Demo badge and claim it is live TEE  
+- Skip the overspend / wrong-addr rejects  

@@ -41,9 +41,15 @@ body {
   min-height: 100%;
   background: var(--bg);
   color: var(--ink);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: Sora, ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   transition: background 0.25s ease, color 0.25s ease;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, color-mix(in srgb, var(--blue) 18%, transparent), transparent 70%);
+  background-attachment: fixed;
 }
 
 a {
@@ -92,6 +98,35 @@ svg {
   display: flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+.mode-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--line, color-mix(in srgb, var(--ink) 12%, transparent));
+  color: var(--muted);
+  background: var(--elevated);
+}
+
+.mode-badge[data-mode="live"] {
+  color: #0a7a3a;
+  border-color: color-mix(in srgb, #30d158 45%, transparent);
+  background: color-mix(in srgb, #30d158 16%, transparent);
+}
+
+[data-theme="dark"] .mode-badge[data-mode="live"] {
+  color: #30d158;
+}
+
+.scenario-hint {
+  margin: 0.65rem 0 1.1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 .icon-btn {

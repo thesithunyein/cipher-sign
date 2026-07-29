@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta
       name="description"
-      content="CipherSign — confidential signing on Flare. Keys in a TEE. Sign only when policy allows."
+      content="CipherSign — Flare TEE payout vault for FAssets bots and keepers. Sign only when policy allows."
     />
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <script>
@@ -38,6 +38,7 @@
         <span>CipherSign</span>
       </a>
       <div class="nav-actions">
+        <span class="mode-badge" id="modeBadge" data-mode="demo">Demo</span>
         <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Theme">
           <svg class="icon sun" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.7" />
@@ -64,28 +65,29 @@
 
     <main>
       <section class="intro">
-        <h1>Sign only when policy says yes.</h1>
+        <h1>Flare payouts that cannot overspend.</h1>
         <p>
-          Private keys stay in a Flare TEE. Recipients, caps, and expiry are
+          Policy-gated signing for FAssets executors, Flare bots, and FTSO
+          forwarders. Keys stay in a Flare TEE. Allowlist, cap, and expiry are
           enforced in the enclave.
         </p>
       </section>
 
       <section class="app" aria-label="Vault">
-        <div class="segment" role="tablist" aria-label="Use case">
-          <button type="button" class="seg active" data-scenario="payroll" role="tab" aria-selected="true">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M4 7h16M4 12h10M4 17h7" /></svg>
-            Payroll
+        <div class="segment" role="tablist" aria-label="Flare use case">
+          <button type="button" class="seg active" data-scenario="fassets" role="tab" aria-selected="true">
+            FAssets
           </button>
-          <button type="button" class="seg" data-scenario="otc" role="tab" aria-selected="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12v10H6z" /></svg>
-            OTC
+          <button type="button" class="seg" data-scenario="bot" role="tab" aria-selected="false">
+            Bot
           </button>
-          <button type="button" class="seg" data-scenario="treasury" role="tab" aria-selected="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M3 10 12 4l9 6v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" /><path fill="none" stroke="currentColor" stroke-width="1.7" d="M9 20v-6h6v6" /></svg>
-            Treasury
+          <button type="button" class="seg" data-scenario="ftso" role="tab" aria-selected="false">
+            FTSO
           </button>
         </div>
+        <p class="scenario-hint" id="scenarioHint">
+          FAssets executor fee vault — allowlisted fee recipient + hard cap.
+        </p>
 
         <div class="panel">
           <div class="panel-top">
@@ -97,14 +99,15 @@
           </div>
 
           <label>
-            Allowed recipient
+            Allowlist
             <div class="field">
-              <input id="recipient" type="text" spellcheck="false" autocomplete="off"
+              <input id="allowlist" type="text" spellcheck="false" autocomplete="off"
                 value="0x1111111111111111111111111111111111111111" />
-              <button type="button" class="field-btn" id="copyRecipient" title="Copy" aria-label="Copy recipient">
+              <button type="button" class="field-btn" id="copyAllowlist" title="Copy" aria-label="Copy allowlist">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" /><path fill="none" stroke="currentColor" stroke-width="1.7" d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
               </button>
             </div>
+            <span class="hint">Comma-separated addresses (up to 5)</span>
           </label>
 
           <div class="row">
@@ -146,7 +149,7 @@
             <div class="field">
               <input id="intentRecipient" type="text" spellcheck="false" autocomplete="off"
                 value="0x1111111111111111111111111111111111111111" />
-              <button type="button" class="field-btn" id="matchRecipient" title="Match policy" aria-label="Match policy recipient">
+              <button type="button" class="field-btn" id="matchRecipient" title="Match first allowlisted address" aria-label="Match first allowlisted address">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M7 7h7v7M17 17H10V10" /></svg>
               </button>
             </div>
@@ -171,8 +174,10 @@
               Sign
             </button>
             <button type="button" id="tryBad" class="btn quiet" disabled>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M12 8v5M12 16.5v.5M5.2 19h13.6L12 5z" /></svg>
               Overspend
+            </button>
+            <button type="button" id="tryWrong" class="btn quiet" disabled>
+              Wrong addr
             </button>
           </div>
         </div>
@@ -195,13 +200,14 @@
     </main>
 
     <footer>
-      <span>Flare Confidential Compute</span>
+      <span>Flare Summer Signal · Bounty 2</span>
       <a
         href="https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9"
         target="_blank"
         rel="noreferrer"
         >Coston2</a
       >
+      <a href="https://dorahacks.io/buidl/47182/" target="_blank" rel="noreferrer">BUIDL</a>
     </footer>
 
     <div class="toast" id="toast" hidden></div>

@@ -10,23 +10,25 @@ CipherSign
 
 ## Short product description
 
-CipherSign is a confidential signing vault on Flare Confidential Compute. A private key is held inside a TEE. Signature requests are gated by a policy (allowed recipient, max amount, expiry) enforced inside the enclave — not in a mutable backend.
+CipherSign is a confidential signing vault on Flare Confidential Compute. A private key is held inside a TEE. Signature requests are gated by a policy (recipient allowlist, max amount, expiry) enforced inside the enclave — not in a mutable backend.
 
-Built for agent wallets, payroll bots, and OTC/escrow flows that must prove: *this key only signs under rules X*.
+Built for Flare-today operators: FAssets executor fee vaults, keeper/bot payouts, and FTSO reward forwarders that must prove: *this key only signs under rules X*.
 
 ## Target user
 
-- Protocol / agent operators who need automated signing without hot-wallet risk  
-- Teams building payroll, OTC, or escrow that must prove policy-bound signing  
+- FAssets / FXRP ops scripts that pay fees to fixed recipients under a hard cap  
+- Flare DeFi keepers and bots that must sign payouts without a drainable hot key  
+- FTSO providers forwarding rewards to a locked payout address  
 
 ## Demo
 
 - **App:** https://cipher-sign.vercel.app  
-- **Video:** _(≤1:30 screen record + voice — follow [DEMO_SCRIPT.md](DEMO_SCRIPT.md); record local live TEE)_  
+- **Video:** https://youtu.be/ZQVAkcT0Z08 _(re-record after polish if needed; follow [DEMO_SCRIPT.md](DEMO_SCRIPT.md))_  
 - **Repo:** https://github.com/thesithunyein/cipher-sign  
 - **Network:** Flare Testnet Coston2 (chain id 114)  
+- **BUIDL:** https://dorahacks.io/buidl/47182/  
 
-**Note for judges:** Policy-gated `KEY/UPDATE` → `SET_POLICY` → `SIGN` is proven live via FCC `/direct` on Coston2 (`SIMULATED_TEE=true`, `CHAIN_ID=114`; see `npm run live:smoke`). The public Vercel app lets anyone try the same policy UX; point `VITE_DIRECT_*` at a tunnel for hosted live mode.
+**Note for judges:** Public Vercel defaults to **Demo mode** (same policy rules in-browser). Live policy-gated `KEY/UPDATE` → `SET_POLICY` → `SIGN` is proven via FCC `/direct` on Coston2 (`SIMULATED_TEE=true`, `CHAIN_ID=114`; see `npm run live:smoke`). Set `VITE_DIRECT_URL` + `VITE_DIRECT_API_KEY` (public tunnel to :6674) for hosted Live TEE.
 
 ## How it uses Flare
 
@@ -39,11 +41,11 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## What was newly built
 
-- Policy model + gated SIGN on top of Flare’s sign scaffold (`SET_POLICY`, intent ABI checks)  
-- Product demo UI (demo + live `/direct` wiring)  
-- 28 unit tests covering pass/reject paths  
+- Policy model + gated SIGN on top of Flare’s sign scaffold (`SET_POLICY` allowlist, intent ABI checks)  
+- Flare-native product UI (FAssets / Bot / FTSO + demo/live modes)  
+- Unit tests covering pass/reject + allowlist paths  
 - Coston2 deployment of `InstructionSender`  
-- Judge docs: architecture, Loom script, feedback loop  
+- Judge docs: architecture, demo script, feedback loop  
 
 ## Deployment details
 

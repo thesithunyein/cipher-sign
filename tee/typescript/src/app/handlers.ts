@@ -42,7 +42,7 @@ export function reportState(): unknown {
     hasPolicy: policy !== null,
     policy: policy
       ? {
-          allowedRecipient: policy.allowedRecipient,
+          allowedRecipients: policy.allowedRecipients,
           maxAmount: policy.maxAmount.toString(),
           expiresAt: policy.expiresAt.toString(),
         }
@@ -117,13 +117,21 @@ async function handleSetPolicy(
     return [null, 0, `invalid policy encoding: ${e}`];
   }
 
-  if (next.allowedRecipient === "0x0000000000000000000000000000000000000000") {
-    return [null, 0, "allowedRecipient cannot be zero address"];
+  if (!next.allowedRecipients.length) {
+    return [null, 0, "allowedRecipients cannot be empty"];
+  }
+  if (next.allowedRecipients.length > 5) {
+    return [null, 0, "allowedRecipients max is 5"];
+  }
+  for (const addr of next.allowedRecipients) {
+    if (addr === "0x0000000000000000000000000000000000000000") {
+      return [null, 0, "allowedRecipients cannot include zero address"];
+    }
   }
 
   policy = next;
   console.log("CipherSign: policy set", {
-    allowedRecipient: next.allowedRecipient,
+    allowedRecipients: next.allowedRecipients,
     maxAmount: next.maxAmount.toString(),
     expiresAt: next.expiresAt.toString(),
   });
@@ -169,9 +177,10 @@ async function handleKeySign(
     return [null, 0, "intent deadline passed"];
   }
 
-  if (
-    intent.recipient.toLowerCase() !== policy.allowedRecipient.toLowerCase()
-  ) {
+  const allowed = policy.allowedRecipients.some(
+    (a) => a.toLowerCase() === intent.recipient.toLowerCase()
+  );
+  if (!allowed) {
     return [null, 0, "recipient not allowed by policy"];
   }
 

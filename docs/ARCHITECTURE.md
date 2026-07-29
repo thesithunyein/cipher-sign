@@ -18,7 +18,7 @@ Removing Flare removes the **attested TEE + registry** trust model. A normal ser
 ## Ops
 
 1. `KEY` / `UPDATE` — load encrypted private key into TEE  
-2. `KEY` / `SET_POLICY` — ABI `(address recipient, uint256 maxAmount, uint256 expiresAt)`  
+2. `KEY` / `SET_POLICY` — ABI `(address[] allowedRecipients, uint256 maxAmount, uint256 expiresAt)`  
 3. `KEY` / `SIGN` — ABI intent `(address, uint256 amount, uint256 deadline, bytes32 payloadHash)`  
    - Rejects if no key, no policy, expired, wrong recipient, or amount > max  
 

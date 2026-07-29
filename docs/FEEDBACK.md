@@ -13,20 +13,21 @@ Flare said: mock missing FCC pieces, get people testing, integrate live TEE in a
 ## Ask in Telegram / X (copy)
 
 ```
-Looking for 2-min testers on CipherSign (Flare Summer Signal — Bounty 2 / Confidential Compute).
+Looking for 2-min testers on CipherSign (Flare Summer Signal — Bounty 2).
 
-Policy-gated signer: key in Flare TEE → signs only if recipient + max amount + expiry pass. Over-cap should reject.
+Flare payout vault: key in TEE, signs only for allowlisted recipients under a cap. Built for FAssets fees / bots / FTSO forwarders.
 
 Try: https://cipher-sign.vercel.app
-1) lock policy
-2) sign OK
-3) Try over-cap attack → Blocked
+1) pick FAssets (or Bot / FTSO)
+2) lock policy
+3) sign OK
+4) Overspend or Wrong addr → Blocked
 
 BUIDL: https://dorahacks.io/buidl/47182/
 Video: https://youtu.be/ZQVAkcT0Z08
 Repo: https://github.com/thesithunyein/cipher-sign
 
-Reply: what confused you / would you use this for agents, payroll, or OTC?
+Reply: what’s confusing / would you use this on Flare?
 ```
 
 ## Feedback log

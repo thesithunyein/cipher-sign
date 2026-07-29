@@ -51,7 +51,7 @@ contract InstructionSender {
         return teeExtensionRegistry.sendInstructions{value: msg.value}(teeIds, params);
     }
 
-    /// @notice Set signing policy inside the TEE (recipient, maxAmount, expiresAt).
+    /// @notice Set signing policy inside the TEE (allowlist, maxAmount, expiresAt).
     function setPolicy(bytes calldata _policy) external payable returns (bytes32) {
         require(_extensionId != 0, "extension ID not set");
 

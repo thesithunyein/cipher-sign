@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://cipher-sign.vercel.app"><img src="https://img.shields.io/badge/Live-cipher--sign.vercel.app-2997ff?style=flat-square" alt="Live" /></a>
-  <img src="https://img.shields.io/badge/Tests-28%2F28-30d158?style=flat-square" alt="Tests" />
+  <img src="https://img.shields.io/badge/Tests-29%2F29-30d158?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/Network-Coston2-111111?style=flat-square" alt="Coston2" />
 </p>
 
@@ -21,13 +21,15 @@
 
 Hot wallets sign anything. CipherSign only signs under a locked policy:
 
-- allowed recipient  
-- max amount  
-- expiry  
+- allowlist (up to 5 recipients)
+- max amount
+- expiry
 
-Policy is enforced **inside an attested Flare TEE** — not a mutable backend.
+Built for **Flare-today users**: FAssets executor fees, keeper/bot payouts, and FTSO reward forwarding — not generic payroll.
 
-**Try it:** [cipher-sign.vercel.app](https://cipher-sign.vercel.app)
+Policy is enforced **inside an attested Flare TEE**, not a mutable backend.
+
+**Try it:** [cipher-sign.vercel.app](https://cipher-sign.vercel.app) · [BUIDL](https://dorahacks.io/buidl/47182/) · [video](https://youtu.be/ZQVAkcT0Z08)
 
 ---
 
@@ -71,10 +73,10 @@ sequenceDiagram
 
 | | |
 |---|---|
-| Useful | Agent payroll / OTC / treasury without hot keys |
+| Useful | FAssets fees / Flare bots / FTSO forwarders without hot keys |
 | Flare-native | InstructionSender → registry → TEE extension |
-| New work | `SET_POLICY` + gated `SIGN` + product UI |
-| Evidence | 28/28 tests · Coston2 deploy · live demo |
+| New work | Allowlist + gated `SIGN` + Flare-native product UI |
+| Evidence | Unit tests · Coston2 deploy · live demo |
 
 Docs: [Architecture](docs/ARCHITECTURE.md) · [Submission](docs/SUBMISSION.md) · [Setup](docs/SETUP.md)
 
