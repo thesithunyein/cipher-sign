@@ -31,7 +31,12 @@
     </script>
   </head>
   <body>
-    <div class="page-bg" aria-hidden="true"></div>
+    <div class="page-bg" aria-hidden="true">
+      <div class="orb orb-a"></div>
+      <div class="orb orb-b"></div>
+      <div class="orb orb-c"></div>
+      <div class="grid-fade"></div>
+    </div>
 
     <header class="nav reveal" style="--d: 0">
       <a class="logo" href="/">
@@ -78,7 +83,28 @@
         </p>
       </section>
 
-      <section class="app reveal" style="--d: 2" aria-label="Vault" id="vault">
+      <div class="ticker reveal" style="--d: 2" aria-hidden="true">
+        <div class="ticker-track">
+          <span class="pill green"><i></i>POLICY READY</span>
+          <span class="pill amber"><i></i>ALLOWLIST</span>
+          <span class="pill cyan"><i></i>COSTON2</span>
+          <span class="pill green"><i></i>TEE ONLINE</span>
+          <span class="pill amber"><i></i>CAP ENFORCED</span>
+          <span class="pill cyan"><i></i>ONCHAIN</span>
+          <span class="pill green"><i></i>OVERSPEND BLOCK</span>
+          <span class="pill amber"><i></i>DEMO MODE</span>
+          <span class="pill green"><i></i>POLICY READY</span>
+          <span class="pill amber"><i></i>ALLOWLIST</span>
+          <span class="pill cyan"><i></i>COSTON2</span>
+          <span class="pill green"><i></i>TEE ONLINE</span>
+          <span class="pill amber"><i></i>CAP ENFORCED</span>
+          <span class="pill cyan"><i></i>ONCHAIN</span>
+          <span class="pill green"><i></i>OVERSPEND BLOCK</span>
+          <span class="pill amber"><i></i>DEMO MODE</span>
+        </div>
+      </div>
+
+      <section class="app reveal" style="--d: 3" aria-label="Vault" id="vault">
         <div class="segment" role="tablist" aria-label="Flare use case">
           <button type="button" class="seg active" data-scenario="fassets" role="tab" aria-selected="true">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -103,7 +129,7 @@
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
               Policy
             </h2>
-            <span class="chip" id="policyChip">Unlocked</span>
+            <span class="chip wait" id="policyChip">Unlocked</span>
           </div>
 
           <label>
@@ -149,7 +175,7 @@
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 5 5L20 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Request
             </h2>
-            <span class="chip" id="signChip">Waiting</span>
+            <span class="chip wait" id="signChip">Waiting</span>
           </div>
 
           <label>
@@ -209,7 +235,7 @@
       </section>
     </main>
 
-    <footer class="reveal" style="--d: 3">
+    <footer class="reveal" style="--d: 4">
       <span>Flare Summer Signal · Bounty 2</span>
       <div class="footer-links">
         <a

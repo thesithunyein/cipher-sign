@@ -226,9 +226,9 @@ function applyScenario(id: string) {
   policy = null;
   lastSig = "";
   policyChip.textContent = "Unlocked";
-  policyChip.className = "chip";
+  policyChip.className = "chip wait";
   signChip.textContent = "Waiting";
-  signChip.className = "chip";
+  signChip.className = "chip wait";
   refreshHints();
   sync();
   setStatus("idle", "Ready", "Lock a policy, then sign.");
@@ -324,7 +324,7 @@ setPolicyBtn.addEventListener("click", async () => {
     policyChip.textContent = "Locked";
     policyChip.className = "chip ok";
     signChip.textContent = "Waiting";
-    signChip.className = "chip";
+    signChip.className = "chip wait";
     sync();
     setStatus(
       "ok",
