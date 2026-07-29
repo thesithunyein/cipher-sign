@@ -1,44 +1,50 @@
 :root,
 [data-theme="dark"] {
-  --bg: #09090b;
-  --surface: #111113;
-  --elevated: #18181b;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.14);
-  --ink: #fafafa;
-  --muted: #a1a1aa;
-  --faint: #71717a;
-  --accent: #fafafa;
-  --accent-fg: #09090b;
+  --bg: #07070c;
+  --surface: rgba(18, 16, 28, 0.78);
+  --elevated: #171522;
+  --line: rgba(167, 139, 250, 0.14);
+  --line-strong: rgba(167, 139, 250, 0.28);
+  --ink: #f5f3ff;
+  --muted: #b4b0c7;
+  --faint: #8b87a2;
+  --brand: #a78bfa;
+  --brand-strong: #8b5cf6;
+  --brand-soft: rgba(167, 139, 250, 0.14);
+  --accent: #8b5cf6;
+  --accent-fg: #f8f5ff;
   --ok: #3dd68c;
-  --ok-soft: rgba(61, 214, 140, 0.12);
-  --bad: #ff6b6b;
-  --bad-soft: rgba(255, 107, 107, 0.12);
-  --shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 12px 40px rgba(0, 0, 0, 0.45);
-  --theme-color: #09090b;
+  --ok-soft: rgba(61, 214, 140, 0.14);
+  --bad: #ff6b7a;
+  --bad-soft: rgba(255, 107, 122, 0.14);
+  --shadow: 0 0 0 1px rgba(167, 139, 250, 0.08), 0 16px 48px rgba(0, 0, 0, 0.45);
+  --theme-color: #07070c;
   --radius: 14px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --glow: rgba(255, 255, 255, 0.04);
 }
 
 [data-theme="light"] {
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --elevated: #f4f4f5;
-  --line: rgba(0, 0, 0, 0.08);
-  --line-strong: rgba(0, 0, 0, 0.14);
-  --ink: #09090b;
-  --muted: #52525b;
-  --faint: #71717a;
-  --accent: #18181b;
-  --accent-fg: #fafafa;
+  --bg: #f6f4fb;
+  --surface: rgba(255, 255, 255, 0.86);
+  --elevated: #efeaf8;
+  --line: rgba(91, 33, 182, 0.12);
+  --line-strong: rgba(91, 33, 182, 0.22);
+  --ink: #1a1228;
+  --muted: #5b5270;
+  --faint: #7c7391;
+  --brand: #7c3aed;
+  --brand-strong: #6d28d9;
+  --brand-soft: rgba(124, 58, 237, 0.1);
+  --accent: #7c3aed;
+  --accent-fg: #ffffff;
   --ok: #16a34a;
   --ok-soft: rgba(22, 163, 74, 0.1);
   --bad: #dc2626;
   --bad-soft: rgba(220, 38, 38, 0.1);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 28px rgba(0, 0, 0, 0.06);
-  --theme-color: #fafafa;
-  --glow: rgba(0, 0, 0, 0.03);
+  --shadow: 0 1px 2px rgba(76, 29, 149, 0.05), 0 12px 32px rgba(76, 29, 149, 0.08);
+  --theme-color: #f6f4fb;
+  --radius: 14px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -47,61 +53,75 @@
 
 html {
   color-scheme: dark light;
+  background: var(--bg);
 }
 
 html,
 body {
   margin: 0;
   min-height: 100%;
-  background: var(--bg);
+  background: transparent;
   color: var(--ink);
   font-family: "Geist Sans", Geist, ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  transition: background 0.3s var(--ease), color 0.3s var(--ease);
 }
 
 .page-bg {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background: #09090b;
+  background:
+    radial-gradient(ellipse 80% 55% at 70% 40%, rgba(139, 92, 246, 0.35), transparent 60%),
+    radial-gradient(ellipse 60% 45% at 20% 10%, rgba(124, 58, 237, 0.2), transparent 55%),
+    #07070c;
 }
 
 .bg-photo {
   position: absolute;
-  inset: -8%;
-  background:
-    url("/bg-glow.png") center 35% / cover no-repeat;
-  transform: scale(1.04);
-  animation: bg-drift 22s ease-in-out infinite alternate;
-  filter: saturate(1.05) contrast(1.05);
+  inset: 0;
+  background: url("/bg-glow.png") center center / cover no-repeat;
+  opacity: 0.95;
+  animation: bg-drift 24s ease-in-out infinite alternate;
 }
 
 .bg-veil {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(9, 9, 11, 0.35) 0%, rgba(9, 9, 11, 0.55) 45%, rgba(9, 9, 11, 0.82) 100%);
+    linear-gradient(
+      180deg,
+      rgba(7, 7, 12, 0.15) 0%,
+      rgba(7, 7, 12, 0.28) 40%,
+      rgba(7, 7, 12, 0.62) 100%
+    );
+}
+
+[data-theme="light"] .page-bg {
+  background:
+    radial-gradient(ellipse 80% 55% at 70% 40%, rgba(167, 139, 250, 0.4), transparent 60%),
+    radial-gradient(ellipse 60% 45% at 25% 0%, rgba(196, 181, 253, 0.35), transparent 55%),
+    #ebe4fb;
 }
 
 [data-theme="light"] .bg-veil {
   background:
-    linear-gradient(180deg, rgba(250, 250, 250, 0.18) 0%, rgba(250, 250, 250, 0.42) 40%, rgba(250, 250, 250, 0.72) 100%);
-}
-
-[data-theme="light"] .bg-photo {
-  filter: saturate(0.95) contrast(1.02) brightness(1.08);
+    linear-gradient(
+      180deg,
+      rgba(246, 244, 251, 0.2) 0%,
+      rgba(246, 244, 251, 0.45) 45%,
+      rgba(246, 244, 251, 0.78) 100%
+    );
 }
 
 @keyframes bg-drift {
   from {
-    transform: scale(1.04) translate3d(0, 0, 0);
+    transform: scale(1.02) translate3d(0, 0, 0);
   }
   to {
-    transform: scale(1.08) translate3d(0, -1.5%, 0);
+    transform: scale(1.07) translate3d(0, -1.2%, 0);
   }
 }
 
@@ -161,7 +181,7 @@ svg {
   z-index: 20;
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
-  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
   border-bottom: 1px solid var(--line);
 }
 
@@ -177,6 +197,7 @@ svg {
 .logo-mark {
   display: block;
   border-radius: 7px;
+  box-shadow: 0 0 0 1px var(--line), 0 0 24px color-mix(in srgb, var(--brand) 35%, transparent);
 }
 
 .nav-actions {
@@ -191,9 +212,9 @@ svg {
   letter-spacing: 0.02em;
   padding: 0.35rem 0.65rem;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  color: var(--muted);
-  background: var(--elevated);
+  border: 1px solid var(--line-strong);
+  color: var(--brand);
+  background: var(--brand-soft);
 }
 
 .mode-badge[data-mode="live"] {
@@ -235,6 +256,8 @@ svg {
 }
 
 main {
+  position: relative;
+  z-index: 1;
   max-width: 680px;
   margin: 0 auto;
   padding: 2.25rem 1.25rem 4rem;
@@ -248,10 +271,10 @@ main {
 .eyebrow {
   margin: 0 0 0.7rem;
   font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: var(--brand);
 }
 
 .intro h1 {
@@ -261,6 +284,10 @@ main {
   letter-spacing: -0.04em;
   line-height: 1.08;
   color: var(--ink);
+  background: linear-gradient(120deg, var(--ink) 20%, var(--brand) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .lede {
@@ -308,9 +335,9 @@ main {
 }
 
 .seg.active {
-  background: var(--surface);
+  background: color-mix(in srgb, var(--brand-soft) 80%, var(--surface));
   color: var(--ink);
-  box-shadow: var(--shadow);
+  box-shadow: inset 0 0 0 1px var(--line-strong), var(--shadow);
 }
 
 .scenario-hint {
@@ -406,8 +433,8 @@ input {
 
 input:focus {
   outline: none;
-  border-color: var(--line-strong);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 6%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--line));
+  box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
 input.invalid {
@@ -482,7 +509,7 @@ input.invalid {
 .preset.active {
   color: var(--ink);
   border-color: var(--line-strong);
-  background: var(--elevated);
+  background: var(--brand-soft);
 }
 
 .actions {
@@ -495,20 +522,23 @@ input.invalid {
   appearance: none;
   border: 0;
   border-radius: 999px;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--brand-strong), var(--brand));
   color: var(--accent-fg);
   font: inherit;
   font-size: 0.88rem;
-  font-weight: 500;
+  font-weight: 560;
   letter-spacing: -0.01em;
   padding: 0.65rem 1.1rem;
   min-height: 2.55rem;
   cursor: pointer;
-  transition: opacity 0.15s var(--ease), transform 0.12s var(--ease);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--brand) 28%, transparent);
+  transition: opacity 0.15s var(--ease), transform 0.12s var(--ease),
+    box-shadow 0.15s var(--ease);
 }
 
 .btn:hover:not(:disabled) {
-  opacity: 0.9;
+  opacity: 0.94;
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--brand) 38%, transparent);
 }
 
 .btn:active:not(:disabled) {
@@ -528,7 +558,8 @@ input.invalid {
 
 .btn.quiet:hover:not(:disabled) {
   opacity: 1;
-  background: var(--elevated);
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
 .btn.busy {
@@ -623,6 +654,8 @@ input.invalid {
 }
 
 footer {
+  position: relative;
+  z-index: 1;
   max-width: 680px;
   margin: 0 auto;
   padding: 0 1.25rem 2.5rem;
@@ -645,7 +678,7 @@ footer a {
 }
 
 footer a:hover {
-  color: var(--ink);
+  color: var(--brand);
 }
 
 @media (max-width: 640px) {
