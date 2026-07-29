@@ -73,31 +73,101 @@ If Live is offline, **Preview** still runs the same allowlist / cap / expiry rul
 
 ## How it uses Flare
 
+### System architecture
+
 ```mermaid
-flowchart LR
-  A[Client] --> B[InstructionSender]
-  B --> C[TeeExtensionRegistry]
-  C --> D[CipherSign TEE]
-  D -->|policy OK| E[ECDSA signature]
-  D -->|fail| F[Reject — no key use]
+flowchart TB
+  subgraph Clients["Operators today"]
+    FA[FAssets executor]
+    BOT[Keeper / bot]
+    FTSO[FTSO forwarder]
+  end
+
+  subgraph Product["CipherSign product"]
+    UI["Web vault<br/>Live TEE · Preview"]
+    UI -->|POST /direct<br/>or on-chain txs| SENDER
+  end
+
+  subgraph Coston2["Flare Coston2 · chain 114"]
+    SENDER["InstructionSender.sol<br/>0x79bB…0Ee9"]
+    REG["TeeExtensionRegistry"]
+    SENDER -->|sendInstructions| REG
+  end
+
+  subgraph FCC["Flare Confidential Compute"]
+    PROXY["ext-proxy · :6674"]
+    REG -.->|route to registered machine| PROXY
+    UI -.->|Live path /fcc → /direct| PROXY
+    PROXY --> TEE
+
+    subgraph TEE["CipherSign TEE extension"]
+      UPD["KEY / UPDATE<br/>key sealed in enclave"]
+      POL["KEY / SET_POLICY<br/>allowlist · max · expiry"]
+      SIGN["KEY / SIGN<br/>intent check + ECDSA"]
+      UPD --> POL --> SIGN
+    end
+  end
+
+  FA --> UI
+  BOT --> UI
+  FTSO --> UI
+
+  SIGN -->|policy OK| SIG["ECDSA signature"]
+  SIGN -->|overspend / wrong addr / expired| REJ["Reject — key never used"]
 ```
 
-Inside the enclave:
+### Policy gate (inside the enclave)
 
-1. `KEY / UPDATE` — create the signing key  
-2. `KEY / SET_POLICY` — lock allowlist, max amount, expiry  
-3. `KEY / SIGN` — release ECDSA only if the intent passes  
+```mermaid
+flowchart LR
+  I[SIGN intent] --> K{Key loaded?}
+  K -->|no| R1[Reject]
+  K -->|yes| P{Policy locked?}
+  P -->|no| R2[Reject]
+  P -->|yes| E{Expired?}
+  E -->|yes| R3[Reject]
+  E -->|no| A{Recipient<br/>allowlisted?}
+  A -->|no| R4[Reject]
+  A -->|yes| M{Amount ≤ max?}
+  M -->|no| R5[Reject]
+  M -->|yes| S[ECDSA sign]
+```
+
+### Ops sequence
 
 ```mermaid
 sequenceDiagram
-  participant Ops as Operator
+  autonumber
+  participant Ops as Operator / bot
+  participant App as CipherSign UI
+  participant Proxy as FCC ext-proxy
   participant TEE as CipherSign TEE
-  Ops->>TEE: SET_POLICY
-  Ops->>TEE: SIGN valid intent
-  TEE-->>Ops: signature
-  Ops->>TEE: SIGN over-cap / wrong recipient
-  TEE-->>Ops: reject
+  participant Chain as Coston2 registries
+
+  Ops->>App: Lock FAssets / Bot / FTSO policy
+  App->>Proxy: KEY/SET_POLICY via /direct
+  Proxy->>TEE: enforce in enclave memory
+  TEE-->>App: policy locked
+
+  Ops->>App: Sign valid payout
+  App->>Proxy: KEY/SIGN
+  TEE->>TEE: allowlist + cap + expiry
+  TEE-->>App: ECDSA signature
+
+  Ops->>App: Overspend / Wrong addr
+  App->>Proxy: KEY/SIGN
+  TEE-->>App: reject — no key use
+
+  Note over App,Chain: On-chain path: InstructionSender → TeeExtensionRegistry → same TEE ops
 ```
+
+Enclave ops:
+
+1. `KEY / UPDATE` — create the signing key inside the TEE  
+2. `KEY / SET_POLICY` — lock allowlist, max amount, expiry  
+3. `KEY / SIGN` — release ECDSA only if the intent passes  
+
+Removing Flare removes the **attested TEE + registry** trust model. A normal server can silently change policy or exfiltrate keys.
 
 ---
 
