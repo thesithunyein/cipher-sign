@@ -1,6 +1,6 @@
 # Screen record + voice (≤1:30) — one take
 
-Do **not** record Vercel for the TEE proof. Vercel is the public browse link (Demo mode = same policy rules).  
+Do **not** record Vercel for the TEE proof. Vercel is the public browse link (**Preview** = same policy rules in-browser).  
 Record **local live TEE** so judges see real `/direct`.
 
 ## Before you press Record (run once)

@@ -1,14 +1,15 @@
 # Tester feedback (Flare guidance)
 
-Flare said: mock missing FCC pieces, get people testing, integrate live TEE in a couple of days when Coston2 is stable.
+Flare said: get people testing; prove live TEE when Coston2 FCC is available.
 
 ## What testers should do (2 minutes)
 
-1. Open the demo link (Vercel / local)
-2. Lock a policy (recipient + max amount)
-3. Request a valid signature → should succeed
-4. Click **Try over-cap attack** → should fail
-5. Reply with: what was confusing / what they’d use this for
+1. Open https://cipher-sign.vercel.app (Preview mode)  
+2. Pick FAssets / Bot / FTSO  
+3. Lock a policy (allowlist + max amount)  
+4. Sign once → should succeed  
+5. Click **Overspend** or **Wrong addr** → should fail  
+6. Reply with: what was confusing / would you use this on Flare?
 
 ## Ask in Telegram / X (copy)
 

@@ -2,7 +2,7 @@
 
 ## One-liner
 
-Confidential signing vault: keys stay in a Flare TEE; signatures only release when policy (recipient, max amount, expiry) passes inside the enclave.
+Confidential signing vault: keys stay in a Flare TEE; signatures only release when policy (allowlist, max amount, expiry) passes inside the enclave.
 
 ## Why Flare (not a Web2 vault)
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.svg" alt="CipherSign" width="56" height="54" />
+  <img src="docs/logo.svg" alt="CipherSign" width="48" height="48" />
 </p>
 
 <h1 align="center">CipherSign</h1>
@@ -76,7 +76,7 @@ sequenceDiagram
 | Useful | FAssets fees / Flare bots / FTSO forwarders without hot keys |
 | Flare-native | InstructionSender → registry → TEE extension |
 | New work | Allowlist + gated `SIGN` + Flare-native product UI |
-| Evidence | Unit tests · Coston2 deploy · live demo |
+| Evidence | 29/29 tests · Coston2 deploy · Preview app · live TEE video |
 
 Docs: [Architecture](docs/ARCHITECTURE.md) · [Submission](docs/SUBMISSION.md) · [Setup](docs/SETUP.md)
 

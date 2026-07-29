@@ -42,8 +42,8 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 ## What was newly built
 
 - Policy model + gated SIGN on top of Flare’s sign scaffold (`SET_POLICY` allowlist, intent ABI checks)  
-- Flare-native product UI (FAssets / Bot / FTSO + demo/live modes)  
-- Unit tests covering pass/reject + allowlist paths  
+- Flare-native product UI (FAssets / Bot / FTSO + Preview / Live TEE modes)  
+- Unit tests covering pass/reject + allowlist paths (29/29)  
 - Coston2 deployment of `InstructionSender`  
 - Judge docs: architecture, demo script, feedback loop  
 
@@ -59,12 +59,12 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Roadmap
 
-1. Harden policy (multi-recipient allowlist, spending windows)  
+1. Spending windows / rate limits on top of allowlist  
 2. Agent SDK: request signatures from bots without exposing keys  
 3. Protocol Managed Wallets / XRPL outbound once FCC matures on Songbird/mainnet  
 
 ## Traction
 
 - Tester ask + log: [FEEDBACK.md](FEEDBACK.md)  
-- Telegram feedback: _(paste)_  
-- Pilot users: _(paste)_  
+- Telegram / X: ask posted in Flare Hackathon Club; collect named replies before judging  
+- Pilot users: _(add as they reply)_  
