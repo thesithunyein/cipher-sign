@@ -22,29 +22,6 @@
   <a href="https://github.com/thesithunyein/cipher-sign">GitHub</a>
 </p>
 
-<br/>
-
-<!-- Same link bar as the live app -->
-<table align="center" width="100%">
-  <tr>
-    <td align="center" width="33%">
-      <sub>NETWORK</sub><br/>
-      <a href="https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9"><strong>Coston2</strong></a><br/>
-      <code>InstructionSender</code>
-    </td>
-    <td align="center" width="33%">
-      <sub>SOURCE</sub><br/>
-      <a href="https://github.com/thesithunyein/cipher-sign"><strong>GitHub</strong></a><br/>
-      <code>29 / 29 tests</code>
-    </td>
-    <td align="center" width="33%">
-      <sub>SUBMISSION</sub><br/>
-      <a href="https://dorahacks.io/buidl/47182/"><strong>DoraHacks</strong></a><br/>
-      <code>Bounty 2</code>
-    </td>
-  </tr>
-</table>
-
 <p align="center">
   <a href="https://cipher-sign.vercel.app">
     <img src="docs/app-hero.png" alt="CipherSign live app — Live TEE, product bar, FAssets vault" width="920" />
@@ -154,16 +131,131 @@ Docs: [Architecture](docs/ARCHITECTURE.md) · [Setup](docs/SETUP.md) · [Demo sc
 
 ---
 
-## Layout
+## Project structure
+
+Exact match to files tracked in this repository:
 
 ```text
-web/                 Live product — FAssets / Bot / FTSO vault
-tee/typescript/      TEE extension — UPDATE · SET_POLICY · SIGN
-tee/contract/        InstructionSender (Coston2)
-docs/                Architecture · setup · submission pack
+cipher-sign/
+├── .github/
+│   └── workflows/
+│       └── build-demo.yml
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── DEMO_SCRIPT.md
+│   ├── DORAHACKS_PASTE.md
+│   ├── FEEDBACK.md
+│   ├── SETUP.md
+│   ├── SUBMISSION.md
+│   ├── app-hero.png
+│   ├── ciphersign-logo-480.png
+│   ├── ciphersign-logo-480.svg
+│   ├── logo-mark.png
+│   ├── logo-mark.svg
+│   └── logo.svg
+├── tee/
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── README.md
+│   ├── docker-compose.yaml
+│   ├── config/
+│   │   ├── coston2/
+│   │   │   └── deployed-addresses.json
+│   │   └── proxy/
+│   │       ├── extension_proxy.toml.example
+│   │       ├── extension_proxy.coston2.toml.example
+│   │       └── extension_proxy.coston2.docker.toml.example
+│   ├── contract/
+│   │   ├── InstructionSender.sol
+│   │   ├── foundry.toml
+│   │   └── interface/
+│   │       ├── ITeeExtensionRegistry.sol
+│   │       └── ITeeMachineRegistry.sol
+│   ├── proxy/
+│   │   └── Dockerfile
+│   ├── scripts/
+│   │   ├── full-setup.sh
+│   │   ├── generate-bindings.sh
+│   │   ├── post-build.sh
+│   │   ├── pre-build.sh
+│   │   ├── start-services.sh
+│   │   ├── stop-services.sh
+│   │   ├── test-direct.sh
+│   │   └── test.sh
+│   ├── typescript/                    # CipherSign TEE extension (primary)
+│   │   ├── Dockerfile
+│   │   ├── README.md
+│   │   ├── package.json
+│   │   ├── package-lock.json
+│   │   ├── tsconfig.json
+│   │   ├── vitest.config.ts
+│   │   └── src/
+│   │       ├── main.ts
+│   │       ├── app/
+│   │       │   ├── abi.ts
+│   │       │   ├── config.ts
+│   │       │   ├── crypto.ts
+│   │       │   └── handlers.ts      # KEY/UPDATE, SET_POLICY, SIGN
+│   │       ├── base/
+│   │       │   ├── crypto.ts
+│   │       │   ├── encoding.ts
+│   │       │   ├── server.ts
+│   │       │   └── types.ts
+│   │       └── __tests__/
+│   │           ├── abi.test.ts
+│   │           ├── base-crypto.test.ts
+│   │           ├── crypto.test.ts
+│   │           ├── encoding.test.ts
+│   │           └── handlers.test.ts
+│   └── go/                            # upstream FCC Go scaffold + tools
+│       ├── Dockerfile
+│       ├── README.md
+│       ├── go.mod
+│       ├── go.sum
+│       ├── main.go
+│       ├── cmd/docker/main.go
+│       ├── internal/
+│       │   ├── app/                   # abi, config, crypto, handlers, types (+ tests)
+│       │   └── base/                  # crypto, encoding, server, types (+ tests)
+│       └── tools/
+│           ├── go.mod
+│           ├── go.sum
+│           ├── app/                   # deploy, generate, test + InstructionSender bindings
+│           ├── base/                  # configs, support, hints, fccutils/
+│           └── cmd/
+│               ├── allow-tee-version/
+│               ├── deploy-contract/
+│               ├── register-extension/
+│               ├── register-tee/
+│               ├── run-test/
+│               └── run-test-direct/
+├── web/                               # Live product UI
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── index.html
+│   ├── live-direct-smoke.mjs
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── tsconfig.json
+│   ├── vercel.json
+│   ├── vite.config.ts
+│   ├── public/
+│   │   ├── bg-glow.png
+│   │   ├── favicon.svg
+│   │   ├── logo-mark.png
+│   │   ├── logo-mark.svg
+│   │   └── logo.svg
+│   └── src/
+│       ├── fcc.ts
+│       ├── main.ts
+│       └── style.css
+├── .gitignore
+├── LICENSE
+├── README.md
+└── vercel.json
 ```
 
-`tee/go`, `tee/python`, and `tee/skills` are upstream Flare FCC scaffold.
+Product code paths: **`web/`** and **`tee/typescript/`**. `tee/go` is upstream Flare FCC scaffold and deploy/register tools.
 
 ---
 
