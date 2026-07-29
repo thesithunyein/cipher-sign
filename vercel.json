@@ -3,5 +3,11 @@
   "framework": "vite",
   "installCommand": "npm install --prefix web",
   "buildCommand": "npm run build --prefix web",
-  "outputDirectory": "web/dist"
+  "outputDirectory": "web/dist",
+  "rewrites": [
+    {
+      "source": "/fcc/:path*",
+      "destination": "https://release-recruitment-centres-glad.trycloudflare.com/:path*"
+    }
+  ]
 }
