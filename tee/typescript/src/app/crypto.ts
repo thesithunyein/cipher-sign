@@ -57,6 +57,20 @@ export function signECDSA(
   return result;
 }
 
+/** Ethereum address (checksum-agnostic hex) from a 32-byte private key. */
+export function addressFromPrivateKey(privateKey: Uint8Array): `0x${string}` {
+  const pub = secp.getPublicKey(privateKey, false); // 65-byte uncompressed
+  const hash = keccak256(pub.slice(1));
+  const addr = bytesToHexAddr(hash.slice(12));
+  return `0x${addr}`;
+}
+
+function bytesToHexAddr(b: Uint8Array): string {
+  return Array.from(b)
+    .map((x) => x.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 /**
  * Validate raw bytes as a secp256k1 private key scalar.
  * Returns the 32-byte key.

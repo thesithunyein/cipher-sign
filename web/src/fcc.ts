@@ -1,6 +1,6 @@
 /**
- * Live Flare FCC /direct client helpers for CipherSign demo.
- * Used when VITE_DIRECT_URL + VITE_DIRECT_API_KEY are set.
+ * Live Flare FCC /direct client for CipherSign vault ops.
+ * Requires VITE_DIRECT_URL + VITE_DIRECT_API_KEY.
  *
  * Proxy flow: POST /direct → action id → poll GET /action/result/:id
  */
@@ -126,7 +126,7 @@ async function pollActionResult(
 }
 
 /**
- * Call TEE proxy POST /direct (Flare FCC hackathon path), then poll for result.
+ * Call TEE proxy POST /direct, then poll for result.
  */
 export async function sendDirectInstruction(opts: {
   baseUrl: string;
@@ -204,19 +204,41 @@ export function liveConfig(): { baseUrl: string; apiKey: string } | null {
   return { baseUrl, apiKey };
 }
 
-/** Lightweight reachability check for Connect / Disconnect UI. */
+export type VaultProbe = {
+  ok: boolean;
+  vaultAddress: `0x${string}` | null;
+};
+
+/** Reachability + vault signer address from TEE /state when available. */
 export async function probeVault(
   baseUrl: string,
   timeoutMs = 5000
-): Promise<boolean> {
-  const url = `${baseUrl.replace(/\/$/, "")}/info`;
+): Promise<VaultProbe> {
+  const base = baseUrl.replace(/\/$/, "");
   const ctrl = new AbortController();
   const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    return res.ok;
+    const infoRes = await fetch(`${base}/info`, { signal: ctrl.signal });
+    if (!infoRes.ok) return { ok: false, vaultAddress: null };
+
+    let vaultAddress: `0x${string}` | null = null;
+    try {
+      const stateRes = await fetch(`${base}/state`, { signal: ctrl.signal });
+      if (stateRes.ok) {
+        const body = (await stateRes.json()) as {
+          state?: { vaultAddress?: string | null };
+        };
+        const addr = body.state?.vaultAddress;
+        if (typeof addr === "string" && addr.startsWith("0x") && addr.length === 42) {
+          vaultAddress = addr as `0x${string}`;
+        }
+      }
+    } catch {
+      /* /state optional behind some proxies */
+    }
+    return { ok: true, vaultAddress };
   } catch {
-    return false;
+    return { ok: false, vaultAddress: null };
   } finally {
     window.clearTimeout(timer);
   }

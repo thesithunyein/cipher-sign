@@ -6,12 +6,12 @@
 
 <p align="center">
   <em>Flare · Confidential Compute</em><br/>
-  <strong>Payouts that cannot overspend.</strong>
+  <strong>Stop overpay and wrong-person payouts.</strong>
 </p>
 
 <p align="center">
-  Policy-gated signing for FAssets executors, Flare bots, and FTSO forwarders.<br/>
-  Keys stay in a TEE. Allowlist, cap, and expiry are enforced in the enclave.
+  For teams that send fees, payroll, or rewards.<br/>
+  Keys stay in a Flare TEE. Allowlist + spending limit enforced before any signature.
 </p>
 
 <p align="center">
@@ -42,24 +42,26 @@ A hot wallet signs anything you ask. That is fine for demos — and fatal for pa
 
 Break the rules → **no signature**. Period.
 
-### Built for Flare operators today
+### Built for finance & ops teams
 
-| Mode | Job |
-|------|-----|
-| **FAssets** | Executor fee vault — fixed fee recipient + hard cap |
-| **Bot** | Keeper / automation payouts without a drainable hot key |
-| **FTSO** | Reward forwarder locked to one payout address |
+| Use case | Job |
+|----------|-----|
+| **Fee payouts** | Only approved fee wallets, under a hard limit |
+| **Team payroll** | Pay approved people — never above the cap |
+| **Rewards** | Partner rewards only to locked payout wallets |
+
+Product brief & market notes: [docs/PRODUCT.md](docs/PRODUCT.md)
 
 ---
 
-## Try it (60 seconds)
+## Try it (live vault required)
 
-1. Open **[cipher-sign.vercel.app](https://cipher-sign.vercel.app)** — badge should read **Live TEE** when the operator node is up  
-2. Pick **FAssets / Bot / FTSO**  
-3. **Lock policy** → **Sign** a valid payout  
-4. Hit **Overspend** or **Wrong addr** — the vault refuses  
+1. Open **[cipher-sign.vercel.app](https://cipher-sign.vercel.app)** with the operator vault online  
+2. **Connect** → pick Fees / Payroll / Rewards → **Lock rules**  
+3. **Approve payout** — proof panel recovers the vault signer cryptographically  
+4. Try **Over the limit** / **Wrong person** — vault blocks (not the browser)  
 
-If Live is offline, **Preview** still runs the same allowlist / cap / expiry rules so the product never goes dark for judges.
+There is **no offline approve path**. If the vault is down, Connect fails — that is intentional.
 
 ---
 
@@ -76,7 +78,7 @@ flowchart TB
   end
 
   subgraph Product["CipherSign product"]
-    UI["Web vault<br/>Live TEE · Preview"]
+    UI["Web vault<br/>Live TEE only"]
     UI -->|POST /direct<br/>or on-chain txs| SENDER
   end
 

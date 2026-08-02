@@ -15,7 +15,7 @@ import {
   abiDecodeIntent,
   type SignPolicy,
 } from "./abi.js";
-import { signECDSA, parsePrivateKey } from "./crypto.js";
+import { signECDSA, parsePrivateKey, addressFromPrivateKey } from "./crypto.js";
 import { hexToBytes, bytesToHex } from "../base/encoding.js";
 
 /** Mutable state — the framework serializes all handler calls. */
@@ -40,6 +40,7 @@ export function reportState(): unknown {
   return {
     hasKey: privateKey !== null,
     hasPolicy: policy !== null,
+    vaultAddress: privateKey ? addressFromPrivateKey(privateKey) : null,
     policy: policy
       ? {
           allowedRecipients: policy.allowedRecipients,

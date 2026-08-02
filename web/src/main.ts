@@ -9,6 +9,7 @@ import {
   type SignIntent,
   type SignPolicy,
 } from "./fcc";
+import { verifyApproval } from "./verify";
 
 type Policy = SignPolicy;
 type ViewId = "landing" | "home" | "rules" | "send" | "activity";
@@ -18,7 +19,7 @@ type Workspace = { team: string; role: string };
 const WS_KEY = "cs-workspace";
 const VAULT_PREF_KEY = "cs-vault-mode";
 
-type VaultState = "checking" | "live" | "local" | "unreachable" | "unavailable";
+type VaultState = "checking" | "live" | "unreachable" | "unavailable";
 
 const SCENARIOS: Record<
   string,
@@ -28,18 +29,18 @@ const SCENARIOS: Record<
     intentAmount: string;
   }
 > = {
-  fassets: {
-    hint: "Fee payouts: only approved fee wallets, under a hard limit.",
+  fees: {
+    hint: "Fee payouts: approved fee wallets only, under a hard spending limit.",
     maxAmount: "1000000",
     intentAmount: "500000",
   },
-  bot: {
-    hint: "Team payroll: automation can pay only the people you approve.",
+  payroll: {
+    hint: "Team payroll: pay only approved people, never above the limit.",
     maxAmount: "5000000",
     intentAmount: "2500000",
   },
-  ftso: {
-    hint: "Rewards: partner rewards go only to the locked payout wallet.",
+  rewards: {
+    hint: "Rewards: partner rewards go only to locked payout wallets.",
     maxAmount: "250000",
     intentAmount: "100000",
   },
@@ -74,6 +75,9 @@ let policy: Policy | null = null;
 let lastSig = "";
 let lastError = "";
 let lastProofSummary = "";
+let lastVerifyDetail = "";
+let lastRecovered: `0x${string}` | null = null;
+let vaultAddress: `0x${string}` | null = null;
 let proofBlobUrl = "";
 let toastTimer = 0;
 let workspace: Workspace | null = null;
@@ -82,7 +86,10 @@ let policyLocking = false;
 
 const proofPanel = document.querySelector<HTMLElement>("#proofPanel")!;
 const proofIdInput = document.querySelector<HTMLInputElement>("#proofId")!;
-const proofLinkInput = document.querySelector<HTMLInputElement>("#proofLink")!;
+const proofSignerInput = document.querySelector<HTMLInputElement>("#proofSigner")!;
+const proofVerifyInput = document.querySelector<HTMLInputElement>("#proofVerify")!;
+const proofChip = document.querySelector<HTMLElement>("#proofChip")!;
+const proofExplain = document.querySelector<HTMLElement>("#proofExplain")!;
 const proofSigArea = document.querySelector<HTMLTextAreaElement>("#proofSig")!;
 const openProofBtn = document.querySelector<HTMLAnchorElement>("#openProof")!;
 
@@ -112,10 +119,6 @@ const liveCfg = liveConfig();
 /** App (Home / Rules / Send / Activity) only after vault Connect. */
 function isAuthed(): boolean {
   return vaultState === "live" && Boolean(liveCfg);
-}
-
-function usingLive(): boolean {
-  return isAuthed();
 }
 
 function refreshSessionChrome() {
@@ -157,19 +160,27 @@ async function connectVault(opts?: { quiet?: boolean }) {
   vaultState = "checking";
   refreshVaultUi();
 
-  const ok = await probeVault(liveCfg.baseUrl);
-  if (!ok) {
+  const probe = await probeVault(liveCfg.baseUrl);
+  if (!probe.ok) {
     localStorage.removeItem(VAULT_PREF_KEY);
     vaultState = "unreachable";
+    vaultAddress = null;
     refreshVaultUi();
     if (!opts?.quiet) toast("Could not connect — vault offline");
     showView("landing");
     return false;
   }
 
+  vaultAddress = probe.vaultAddress;
   vaultState = "live";
   refreshVaultUi();
-  if (!opts?.quiet) toast("Connected");
+  if (!opts?.quiet) {
+    toast(
+      vaultAddress
+        ? `Connected · vault ${short(vaultAddress)}`
+        : "Connected · live vault"
+    );
+  }
 
   if (!workspace) {
     openWorkspaceModal();
@@ -183,8 +194,11 @@ function disconnectVault(opts?: { quiet?: boolean }) {
   localStorage.removeItem(VAULT_PREF_KEY);
   vaultState = liveCfg ? "unreachable" : "unavailable";
   policy = null;
+  vaultAddress = null;
   lastSig = "";
   lastError = "";
+  lastRecovered = null;
+  lastVerifyDetail = "";
   hideProof();
   policyChip.textContent = "Not locked";
   policyChip.className = "chip";
@@ -269,7 +283,7 @@ function humanizeError(err: unknown): {
   ) {
     return {
       title: "Vault unreachable",
-      body: "The secure vault is offline right now. Your rules stay in this browser — try again once the vault is back.",
+      body: "The live vault is offline. Reconnect when it is back — CipherSign does not approve payouts offline.",
       tech,
     };
   }
@@ -310,7 +324,14 @@ function revokeProofBlob() {
   }
 }
 
-function buildProofReceipt(sig: string, summary: string, proofId: string): string {
+function buildProofReceipt(opts: {
+  sig: string;
+  summary: string;
+  proofId: string;
+  verify: string;
+  signer: string;
+  expectedVault: string;
+}): string {
   const when = new Date().toISOString();
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -319,34 +340,36 @@ function buildProofReceipt(sig: string, summary: string, proofId: string): strin
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>CipherSign approval · ${esc(proofId)}</title>
+<title>CipherSign approval · ${esc(opts.proofId)}</title>
 <style>
-  :root { color-scheme: dark; font-family: ui-sans-serif, system-ui, sans-serif; }
-  body { margin: 0; min-height: 100vh; background: #0b1220; color: #e8eefc; padding: 2rem; }
+  :root { color-scheme: dark; font-family: "Geist", ui-sans-serif, system-ui, sans-serif; }
+  body { margin: 0; min-height: 100vh; background: #07070c; color: #f2f2f5; padding: 2rem; }
   main { max-width: 40rem; margin: 0 auto; }
-  h1 { font-size: 1.35rem; margin: 0 0 .35rem; }
-  .muted { color: #9db0d0; font-size: .95rem; line-height: 1.45; }
+  h1 { font-size: 1.35rem; margin: 0 0 .35rem; letter-spacing: -0.02em; }
+  .muted { color: #a1a1aa; font-size: .95rem; line-height: 1.5; }
   .row { margin: 1.25rem 0; }
-  .label { display: block; font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: #7f95b8; margin-bottom: .35rem; }
-  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
-  .box { background: #121a2b; border: 1px solid #24314a; border-radius: 10px; padding: .85rem 1rem; }
-  .ok { color: #7ddea0; }
+  .label { display: block; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: #71717a; margin-bottom: .35rem; }
+  .mono { font-family: "Geist Mono", ui-monospace, Menlo, Consolas, monospace; word-break: break-all; }
+  .box { background: #121218; border: 1px solid #27272a; border-radius: 8px; padding: .85rem 1rem; }
+  .ok { color: #4ade80; } .bad { color: #f87171; }
 </style>
 </head>
 <body>
 <main>
-  <p class="ok">CipherSign · vault approval proof</p>
-  <h1>${esc(summary)}</h1>
-  <p class="muted">Signed by the CipherSign Flare TEE vault after locked rules passed. This is vault signature proof (demo <code>/direct</code>), not a Coston2 payment explorer transaction.</p>
-  <div class="row"><span class="label">Proof ID</span><div class="box mono">${esc(proofId)}</div></div>
+  <p class="${opts.verify.startsWith("Verified") || opts.verify.startsWith("Recovered") ? "ok" : "bad"}">${esc(opts.verify)}</p>
+  <h1>${esc(opts.summary)}</h1>
+  <p class="muted">Policy-gated approval from the CipherSign Flare TEE vault. Authenticity = ECDSA recover of the vault signer, not a UI badge and not a payment explorer tx.</p>
+  <div class="row"><span class="label">Vault signer (recovered)</span><div class="box mono">${esc(opts.signer || "—")}</div></div>
+  <div class="row"><span class="label">Expected vault</span><div class="box mono">${esc(opts.expectedVault || "not reported by /state yet")}</div></div>
+  <div class="row"><span class="label">Proof ID</span><div class="box mono">${esc(opts.proofId)}</div></div>
   <div class="row"><span class="label">Approved at (UTC)</span><div class="box mono">${esc(when)}</div></div>
-  <div class="row"><span class="label">Full vault signature</span><div class="box mono">${esc(sig)}</div></div>
+  <div class="row"><span class="label">Raw approval payload</span><div class="box mono">${esc(opts.sig)}</div></div>
 </main>
 </body>
 </html>`;
 }
 
-function showProof(sig: string, summary: string) {
+async function showProof(sig: string, summary: string) {
   lastSig = sig;
   lastProofSummary = summary;
   proofPanel.hidden = !sig;
@@ -354,25 +377,69 @@ function showProof(sig: string, summary: string) {
     hideProof();
     return;
   }
-  const proofId = proofIdFromSig(sig);
-  proofIdInput.value = proofId;
+
+  proofChip.textContent = "Checking…";
+  proofChip.className = "chip";
+  proofVerifyInput.value = "Recovering signer…";
+  proofSignerInput.value = "";
+  proofIdInput.value = proofIdFromSig(sig);
   proofSigArea.value = sig;
+
+  const verified = await verifyApproval(sig as Hex, vaultAddress);
+  lastRecovered = verified.recovered;
+  lastVerifyDetail = verified.detail;
+  if (verified.recovered && !vaultAddress) {
+    vaultAddress = verified.recovered;
+  }
+
+  proofVerifyInput.value = verified.detail;
+  proofSignerInput.value = verified.recovered ?? "";
+  proofChip.textContent = verified.ok
+    ? verified.matchesVault === false
+      ? "Not verified"
+      : "Verified"
+    : "Not verified";
+  proofChip.className = verified.ok ? "chip ok" : "chip bad";
+  proofExplain.textContent = verified.ok
+    ? "This approval was signed by the vault key after locked rules passed."
+    : "This payload failed cryptographic checks. Do not treat it as a real approval.";
+
+  const proofId = proofIdInput.value;
   revokeProofBlob();
-  const blob = new Blob([buildProofReceipt(sig, summary, proofId)], {
-    type: "text/html",
-  });
+  const blob = new Blob(
+    [
+      buildProofReceipt({
+        sig,
+        summary,
+        proofId,
+        verify: verified.detail,
+        signer: verified.recovered ?? "",
+        expectedVault: vaultAddress ?? "",
+      }),
+    ],
+    { type: "text/html" }
+  );
   proofBlobUrl = URL.createObjectURL(blob);
-  proofLinkInput.value = proofBlobUrl;
   openProofBtn.href = proofBlobUrl;
-  setStatus("ok", "Payout approved", `${summary} · Proof ID ${proofId}`);
+
+  setStatus(
+    verified.ok ? "ok" : "bad",
+    verified.ok ? "Payout approved" : "Approval failed verification",
+    `${summary} · ${verified.detail}`
+  );
 }
 
 function hideProof() {
   proofPanel.hidden = true;
   proofIdInput.value = "";
-  proofLinkInput.value = "";
+  proofSignerInput.value = "";
+  proofVerifyInput.value = "";
   proofSigArea.value = "";
   lastProofSummary = "";
+  lastRecovered = null;
+  lastVerifyDetail = "";
+  proofChip.textContent = "Checking…";
+  proofChip.className = "chip";
   openProofBtn.href = "#";
   revokeProofBlob();
 }
@@ -574,23 +641,6 @@ function readIntent(): SignIntent {
   };
 }
 
-function check(p: Policy, intent: SignIntent): string | null {
-  const now = BigInt(Math.floor(Date.now() / 1000));
-  if (p.expiresAt !== 0n && now > p.expiresAt) return "policy expired";
-  if (intent.deadline !== 0n && now > intent.deadline)
-    return "intent deadline passed";
-  const allowed = p.allowedRecipients.some(
-    (a) => a.toLowerCase() === intent.recipient.toLowerCase()
-  );
-  if (!allowed) return "recipient not allowed by policy";
-  if (intent.amount > p.maxAmount) return "amount exceeds policy maxAmount";
-  return null;
-}
-
-function fakeSig(intentHex: Hex) {
-  return keccak256(toBytes(`sig:${intentHex}`));
-}
-
 function showView(id: ViewId) {
   if (id !== "landing" && !isAuthed()) {
     id = "landing";
@@ -702,7 +752,7 @@ document.querySelectorAll<HTMLElement>("[data-nav]").forEach((el) => {
 
 document.querySelectorAll<HTMLElement>("[data-scenario]").forEach((el) => {
   el.addEventListener("click", () => {
-    applyScenario(el.dataset.scenario || "fassets");
+    applyScenario(el.dataset.scenario || "fees");
   });
 });
 
@@ -746,19 +796,22 @@ document.querySelector("#copyProof")?.addEventListener("click", () => {
   const payload = [
     "CipherSign approval proof",
     `Summary: ${lastProofSummary}`,
+    `Verification: ${lastVerifyDetail}`,
+    `Vault signer: ${lastRecovered ?? ""}`,
+    `Expected vault: ${vaultAddress ?? ""}`,
     `Proof ID: ${proofIdInput.value}`,
-    `Signature: ${lastSig}`,
-    "Note: Flare TEE vault signature via /direct (not a Coston2 payment tx).",
+    `Payload: ${lastSig}`,
   ].join("\n");
-  void copyText(payload, "Full proof copied");
+  void copyText(payload, "Proof pack copied");
 });
 
 document.querySelector("#copyProofId")?.addEventListener("click", () => {
   if (proofIdInput.value) void copyText(proofIdInput.value, "Proof ID copied");
 });
 
-document.querySelector("#copyProofLink")?.addEventListener("click", () => {
-  if (proofLinkInput.value) void copyText(proofLinkInput.value, "Confirmation link copied");
+document.querySelector("#copyProofSigner")?.addEventListener("click", () => {
+  if (proofSignerInput.value)
+    void copyText(proofSignerInput.value, "Vault signer copied");
 });
 
 document.querySelector("#maxAmount")!.addEventListener("input", () => {
@@ -840,7 +893,12 @@ setPolicyBtn.addEventListener("click", async () => {
 });
 
 trySignBtn.addEventListener("click", async () => {
-  if (!policy && !usingLive()) {
+  if (!isAuthed() || !liveCfg) {
+    toast("Connect the live vault first");
+    showView("landing");
+    return;
+  }
+  if (!policy) {
     setStatus("bad", "Lock rules first", "Go to Rules, lock them, then send.");
     showView("rules");
     return;
@@ -860,56 +918,25 @@ trySignBtn.addEventListener("click", async () => {
   trySignBtn.classList.add("busy");
   trySignBtn.disabled = true;
   try {
-    if (usingLive() && liveCfg) {
-      const res = await sendDirectInstruction({
-        baseUrl: liveCfg.baseUrl,
-        apiKey: liveCfg.apiKey,
-        opType: "KEY",
-        opCommand: "SIGN",
-        originalMessage: encodeIntent(intent),
-      });
-      if (res.status !== 1) {
-        lastSig = "";
-        hideProof();
-        lastSig = "";
-        hideProof();
-        signChip.textContent = "Refused";
-        signChip.className = "chip bad";
-        const msg = (res.log ?? "").replace(/^error:\s*/i, "");
-        const body =
-          ERRORS[msg] ?? res.log ?? "This payout breaks the locked rules.";
-        setStatus("bad", "Payout blocked", body);
-        addActivity(
-          "bad",
-          "Payout blocked",
-          `${fmt(intent.amount.toString())} to ${short(intent.recipient)} · ${body}`
-        );
-        document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
-        return;
-      }
-      const sig = res.data ?? "";
-      signChip.textContent = "Approved";
-      signChip.className = "chip ok";
-      const summary = `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`;
-      showProof(sig, summary);
-      addActivity(
-        "ok",
-        "Payout approved",
-        `${summary} · proof ${proofIdFromSig(sig) || "saved"}`
-      );
-      document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
-      toast("Approved — proof ready below");
-      return;
-    }
+    // Refresh vault address from TEE state when possible.
+    const probe = await probeVault(liveCfg.baseUrl, 3000);
+    if (probe.vaultAddress) vaultAddress = probe.vaultAddress;
 
-    if (!policy) return;
-    const err = check(policy, intent);
-    if (err) {
+    const res = await sendDirectInstruction({
+      baseUrl: liveCfg.baseUrl,
+      apiKey: liveCfg.apiKey,
+      opType: "KEY",
+      opCommand: "SIGN",
+      originalMessage: encodeIntent(intent),
+    });
+    if (res.status !== 1) {
       lastSig = "";
       hideProof();
       signChip.textContent = "Refused";
       signChip.className = "chip bad";
-      const body = ERRORS[err] ?? err;
+      const msg = (res.log ?? "").replace(/^error:\s*/i, "");
+      const body =
+        ERRORS[msg] ?? res.log ?? "This payout breaks the locked rules.";
       setStatus("bad", "Payout blocked", body);
       addActivity(
         "bad",
@@ -919,20 +946,25 @@ trySignBtn.addEventListener("click", async () => {
       document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
       return;
     }
-
-    const hex = encodeIntent(intent);
-    const sig = fakeSig(hex);
-    signChip.textContent = "Approved";
-    signChip.className = "chip ok";
+    const sig = res.data ?? "";
+    if (!sig) {
+      signChip.textContent = "Error";
+      signChip.className = "chip bad";
+      setStatus("bad", "Empty approval", "Vault returned no signature payload.");
+      return;
+    }
     const summary = `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`;
-    showProof(sig, summary);
+    await showProof(sig, summary);
+    const verifiedOk = proofChip.textContent === "Verified";
+    signChip.textContent = verifiedOk ? "Approved" : "Unverified";
+    signChip.className = verifiedOk ? "chip ok" : "chip bad";
     addActivity(
-      "ok",
-      "Payout approved",
-      `${summary} · proof ${proofIdFromSig(sig)}`
+      verifiedOk ? "ok" : "bad",
+      verifiedOk ? "Payout approved" : "Approval unverified",
+      `${summary} · ${lastVerifyDetail || proofIdFromSig(sig)}`
     );
     document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
-    toast("Approved — proof ready below");
+    toast(verifiedOk ? "Approved — cryptographically verified" : "Payload failed verify");
   } catch (e) {
     lastSig = "";
     hideProof();
