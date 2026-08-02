@@ -305,7 +305,7 @@ function setTheme(theme: "light" | "dark") {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("cs-theme", theme);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", theme === "light" ? "#f7f7f8" : "#07070c");
+  if (meta) meta.setAttribute("content", theme === "light" ? "#eef0f8" : "#0a0b12");
 }
 
 function currentTheme(): "light" | "dark" {

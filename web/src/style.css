@@ -24,25 +24,25 @@
 }
 
 [data-theme="light"] {
-  --bg: #f7f7f8;
-  --surface: #ffffff;
-  --elevated: #f0f0f2;
-  --line: rgba(24, 24, 27, 0.1);
-  --line-strong: rgba(24, 24, 27, 0.16);
-  --ink: #111113;
-  --muted: #52525b;
-  --faint: #71717a;
-  --brand: #7c3aed;
-  --brand-strong: #6d28d9;
-  --brand-soft: rgba(124, 58, 237, 0.1);
-  --accent: #6d28d9;
+  --bg: #eef0f8;
+  --surface: rgba(255, 255, 255, 0.72);
+  --elevated: rgba(255, 255, 255, 0.88);
+  --line: rgba(40, 44, 72, 0.12);
+  --line-strong: rgba(40, 44, 72, 0.2);
+  --ink: #15182a;
+  --muted: #4b5168;
+  --faint: #6b728a;
+  --brand: #5b4cdb;
+  --brand-strong: #4636c4;
+  --brand-soft: rgba(91, 76, 219, 0.12);
+  --accent: #4636c4;
   --accent-fg: #ffffff;
-  --ok: #16a34a;
-  --ok-soft: rgba(22, 163, 74, 0.1);
-  --bad: #dc2626;
-  --bad-soft: rgba(220, 38, 38, 0.1);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
-  --theme-color: #f7f7f8;
+  --ok: #0f9f6e;
+  --ok-soft: rgba(15, 159, 110, 0.12);
+  --bad: #d6455d;
+  --bad-soft: rgba(214, 69, 93, 0.12);
+  --shadow: 0 1px 2px rgba(30, 34, 60, 0.04), 0 12px 32px rgba(60, 70, 120, 0.1);
+  --theme-color: #eef0f8;
   --radius: 14px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -65,8 +65,9 @@ body {
   overflow-y: auto;
   background: transparent;
   color: var(--ink);
-  font-family: "Geist Sans", Geist, ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "ss01" on, "cv11" on;
+  font-family: Manrope, "Segoe UI", sans-serif;
+  font-feature-settings: "ss01" on;
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -77,43 +78,52 @@ body {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse 80% 55% at 50% 0%, rgba(139, 92, 246, 0.38), transparent 58%),
-    #07070c;
+  background: #0a0b12;
 }
 
 .bg-photo {
   position: absolute;
-  inset: 0;
-  background: url("/bg-glow.png") center top / cover no-repeat;
-  opacity: 0.9;
-  animation: bg-drift 24s ease-in-out infinite alternate;
+  inset: -4%;
+  background: url("/bg-atmosphere.png") center center / cover no-repeat;
+  opacity: 0.42;
+  filter: saturate(1.05) contrast(1.05);
+  animation: bg-drift 28s ease-in-out infinite alternate;
 }
 
 .bg-veil {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(7, 7, 12, 0.12) 0%,
-    rgba(7, 7, 12, 0.35) 48%,
-    rgba(7, 7, 12, 0.78) 100%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 11, 18, 0.55) 0%,
+      rgba(10, 11, 18, 0.72) 42%,
+      rgba(10, 11, 18, 0.92) 100%
+    ),
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(91, 76, 219, 0.22), transparent 60%);
 }
 
-/* Light mode: clean product UI — no grainy photo */
+/* Light mode: full atmosphere plate */
 [data-theme="light"] .page-bg {
-  background:
-    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(124, 58, 237, 0.08), transparent 55%),
-    #f7f7f8;
+  background: #e8ebf6;
 }
 
 [data-theme="light"] .bg-photo {
-  display: none;
+  display: block;
+  opacity: 1;
+  filter: saturate(1.08) contrast(1.02);
 }
 
 [data-theme="light"] .bg-veil {
-  display: none;
+  display: block;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(238, 240, 248, 0.28) 0%,
+      rgba(238, 240, 248, 0.55) 48%,
+      rgba(238, 240, 248, 0.88) 100%
+    ),
+    radial-gradient(ellipse 80% 45% at 50% -5%, rgba(255, 255, 255, 0.35), transparent 55%);
 }
 
 @keyframes bg-drift {
@@ -156,9 +166,10 @@ svg {
 }
 
 .mono {
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85rem !important;
-  letter-spacing: -0.015em;
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.84rem !important;
+  letter-spacing: -0.02em;
+  font-feature-settings: "ss02" on;
 }
 
 .reveal {
@@ -227,15 +238,16 @@ svg {
 }
 
 [data-theme="light"] .nav {
-  background: rgba(247, 247, 248, 0.9);
+  background: rgba(238, 240, 248, 0.72);
 }
 
 .logo {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  font-weight: 600;
-  font-size: 0.95rem;
+  font-family: Syne, Manrope, sans-serif;
+  font-weight: 700;
+  font-size: 0.98rem;
   letter-spacing: -0.03em;
 }
 
@@ -317,10 +329,11 @@ main {
 
 .hero h1 {
   margin: 0 0 0.85rem;
-  font-size: clamp(2.2rem, 6vw, 3.4rem);
-  font-weight: 700;
-  letter-spacing: -0.055em;
-  line-height: 1.02;
+  font-family: Syne, Manrope, sans-serif;
+  font-size: clamp(2.35rem, 6.2vw, 3.55rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
   color: #fff;
 }
 
@@ -334,9 +347,10 @@ main {
 
 .page-head h1 {
   margin: 0 0 0.35rem;
-  font-size: 1.65rem;
-  font-weight: 650;
-  letter-spacing: -0.04em;
+  font-family: Syne, Manrope, sans-serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
 }
 
 .page-head p {
@@ -632,7 +646,7 @@ main {
 .activity-list time {
   color: var(--faint);
   font-size: 0.72rem;
-  font-family: "Geist Mono", ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 .activity-go {
@@ -677,7 +691,7 @@ main {
 }
 
 .proof-explain code {
-  font-family: "Geist Mono", ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 0.82em;
   color: var(--ink);
 }
@@ -691,7 +705,7 @@ main {
   background: var(--elevated);
   color: var(--ink);
   font: inherit;
-  font-family: "Geist Mono", ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 0.78rem;
   line-height: 1.4;
   padding: 0.7rem 0.8rem;
@@ -891,10 +905,11 @@ main {
 
 .intro h1 {
   margin: 0 0 0.75rem;
+  font-family: Syne, Manrope, sans-serif;
   font-size: clamp(2.1rem, 6vw, 3.15rem);
-  font-weight: 700;
-  letter-spacing: -0.055em;
-  line-height: 1.02;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
   color: #fff;
 }
 
@@ -971,7 +986,7 @@ main {
 }
 
 .evidence .ev-meta {
-  font-family: "Geist Mono", ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 0.72rem;
   letter-spacing: -0.02em;
   color: var(--muted);
