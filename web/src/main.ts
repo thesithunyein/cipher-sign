@@ -4,6 +4,7 @@ import {
   encodeIntent,
   encodePolicy,
   liveConfig,
+  probeVault,
   sendDirectInstruction,
   type SignIntent,
   type SignPolicy,
@@ -15,6 +16,9 @@ type ViewId = "landing" | "home" | "rules" | "send" | "activity";
 type Workspace = { team: string; role: string };
 
 const WS_KEY = "cs-workspace";
+const VAULT_PREF_KEY = "cs-vault-mode";
+
+type VaultState = "checking" | "live" | "local" | "unreachable" | "unavailable";
 
 const SCENARIOS: Record<
   string,
@@ -63,6 +67,7 @@ let lastSig = "";
 let toastTimer = 0;
 let currentView: ViewId = "landing";
 let workspace: Workspace | null = null;
+let vaultState: VaultState = "checking";
 
 const policyChip = document.querySelector<HTMLElement>("#policyChip")!;
 const signChip = document.querySelector<HTMLElement>("#signChip")!;
@@ -87,7 +92,133 @@ const workspaceModal = document.querySelector<HTMLElement>("#workspaceModal")!;
 const teamNameInput = document.querySelector<HTMLInputElement>("#teamName")!;
 const statusDetails = document.querySelector<HTMLDetailsElement>("#statusDetails")!;
 const statusTech = document.querySelector<HTMLElement>("#statusTech")!;
-const live = liveConfig();
+const statusActions = document.querySelector<HTMLElement>("#statusActions")!;
+const modeLabel = document.querySelector<HTMLElement>("#modeLabel")!;
+const vaultAction = document.querySelector<HTMLButtonElement>("#vaultAction")!;
+const liveCfg = liveConfig();
+
+function vaultPrefersLive(): boolean {
+  const pref = localStorage.getItem(VAULT_PREF_KEY);
+  if (pref === "local") return false;
+  if (pref === "live") return true;
+  return Boolean(liveCfg);
+}
+
+function usingLive(): boolean {
+  return vaultState === "live" && Boolean(liveCfg);
+}
+
+function showVaultActions(show: boolean) {
+  statusActions.hidden = !show;
+}
+
+function refreshVaultUi() {
+  modeBadge.dataset.mode =
+    vaultState === "live"
+      ? "live"
+      : vaultState === "checking"
+        ? "checking"
+        : vaultState === "unreachable"
+          ? "down"
+          : "preview";
+
+  const labels: Record<VaultState, string> = {
+    checking: "Checking",
+    live: "Live",
+    local: "Offline",
+    unreachable: "Down",
+    unavailable: "Local",
+  };
+  modeLabel.textContent = labels[vaultState];
+
+  if (!liveCfg || vaultState === "unavailable") {
+    vaultAction.hidden = true;
+    vaultAction.disabled = true;
+    return;
+  }
+
+  vaultAction.hidden = false;
+  vaultAction.disabled = vaultState === "checking";
+  if (vaultState === "live") {
+    vaultAction.textContent = "Disconnect";
+    vaultAction.title = "Disconnect vault and work offline";
+  } else if (vaultState === "checking") {
+    vaultAction.textContent = "Connecting…";
+    vaultAction.title = "Checking vault";
+  } else {
+    vaultAction.textContent = "Connect";
+    vaultAction.title = "Connect to the secure vault";
+  }
+
+  refreshDashboard();
+}
+
+async function connectVault(opts?: { quiet?: boolean }) {
+  if (!liveCfg) {
+    vaultState = "unavailable";
+    refreshVaultUi();
+    return false;
+  }
+  localStorage.setItem(VAULT_PREF_KEY, "live");
+  vaultState = "checking";
+  refreshVaultUi();
+  showVaultActions(false);
+
+  const ok = await probeVault(liveCfg.baseUrl);
+  vaultState = ok ? "live" : "unreachable";
+  refreshVaultUi();
+
+  if (ok) {
+    if (!opts?.quiet) toast("Vault connected");
+    if (currentView !== "landing") {
+      setStatus(
+        "ok",
+        "Vault connected",
+        "Live signing is ready. Lock rules, then send a payout."
+      );
+    }
+    return true;
+  }
+
+  if (currentView !== "landing") {
+    setStatus(
+      "bad",
+      "Vault unreachable",
+      "The secure vault is offline right now. Connect when it is back, or work offline with the same rules.",
+      "Could not reach vault /info",
+      { vaultActions: true }
+    );
+  }
+  return false;
+}
+
+function disconnectVault(opts?: { quiet?: boolean }) {
+  localStorage.setItem(VAULT_PREF_KEY, "local");
+  vaultState = liveCfg ? "local" : "unavailable";
+  refreshVaultUi();
+  showVaultActions(false);
+  if (!opts?.quiet) toast("Working offline");
+  if (currentView !== "landing") {
+    setStatus(
+      "idle",
+      "Working offline",
+      "Same payout rules run in this browser. Press Connect when the vault is back."
+    );
+  }
+}
+
+async function initVault() {
+  if (!liveCfg) {
+    vaultState = "unavailable";
+    refreshVaultUi();
+    return;
+  }
+  if (!vaultPrefersLive()) {
+    disconnectVault({ quiet: true });
+    return;
+  }
+  await connectVault({ quiet: true });
+}
 
 function toast(message: string) {
   toastEl.hidden = false;
@@ -171,7 +302,8 @@ function setStatus(
   kind: "idle" | "ok" | "bad",
   title: string,
   body: string,
-  tech?: string
+  tech?: string,
+  opts?: { vaultActions?: boolean }
 ) {
   const hide = currentView === "landing";
   statusEl.hidden = hide;
@@ -188,6 +320,7 @@ function setStatus(
     statusDetails.open = false;
     statusTech.textContent = "";
   }
+  showVaultActions(Boolean(opts?.vaultActions));
   copySigBtn.hidden = !(kind === "ok" && lastSig);
   statusEl.classList.remove("is-updating");
   void statusEl.offsetWidth;
@@ -204,7 +337,7 @@ function addActivity(kind: "ok" | "bad" | "idle", title: string, body: string) {
 }
 
 function sync() {
-  const ready = Boolean(policy) || Boolean(live);
+  const ready = Boolean(policy) || usingLive();
   trySignBtn.disabled = !ready;
   tryBadBtn.disabled = !ready;
   tryWrongBtn.disabled = !ready;
@@ -255,11 +388,17 @@ function refreshDashboard() {
     );
   }
 
-  if (live) {
+  if (vaultState === "live") {
     dashVault!.textContent = "Live";
     dashVaultMeta!.textContent = "Connected on Flare";
+  } else if (vaultState === "checking") {
+    dashVault!.textContent = "Checking";
+    dashVaultMeta!.textContent = "Looking for vault…";
+  } else if (vaultState === "unreachable") {
+    dashVault!.textContent = "Down";
+    dashVaultMeta!.textContent = "Connect when vault is back";
   } else {
-    dashVault!.textContent = "Local";
+    dashVault!.textContent = "Offline";
     dashVaultMeta!.textContent = "Same rules, local session";
   }
 
@@ -367,7 +506,7 @@ function showView(id: ViewId) {
 
   if (id === "rules" && !policy) {
     setStatus("idle", "Set your rules", "Choose who can get paid and the spending limit, then lock.");
-  } else if (id === "send" && !policy && !live) {
+  } else if (id === "send" && !policy && !usingLive()) {
     setStatus("idle", "Lock rules first", "Go to Rules, lock them, then come back to send.");
   } else if (id === "home" && workspace) {
     setStatus(
@@ -525,10 +664,10 @@ setPolicyBtn.addEventListener("click", async () => {
   setPolicyBtn.classList.add("busy");
   setPolicyBtn.disabled = true;
   try {
-    if (live) {
+    if (usingLive() && liveCfg) {
       const res = await sendDirectInstruction({
-        baseUrl: live.baseUrl,
-        apiKey: live.apiKey,
+        baseUrl: liveCfg.baseUrl,
+        apiKey: liveCfg.apiKey,
         opType: "KEY",
         opCommand: "SET_POLICY",
         originalMessage: encodePolicy(next),
@@ -553,7 +692,9 @@ setPolicyBtn.addEventListener("click", async () => {
     showView("send");
   } catch (e) {
     const msg = humanizeError(e);
-    setStatus("bad", msg.title, msg.body, msg.tech);
+    vaultState = "unreachable";
+    refreshVaultUi();
+    setStatus("bad", msg.title, msg.body, msg.tech, { vaultActions: true });
     addActivity("bad", msg.title, msg.body);
   } finally {
     setPolicyBtn.classList.remove("busy");
@@ -563,7 +704,7 @@ setPolicyBtn.addEventListener("click", async () => {
 });
 
 trySignBtn.addEventListener("click", async () => {
-  if (!policy && !live) {
+  if (!policy && !usingLive()) {
     setStatus("bad", "Lock rules first", "Go to Rules, lock them, then send.");
     showView("rules");
     return;
@@ -581,10 +722,10 @@ trySignBtn.addEventListener("click", async () => {
   trySignBtn.classList.add("busy");
   trySignBtn.disabled = true;
   try {
-    if (live) {
+    if (usingLive() && liveCfg) {
       const res = await sendDirectInstruction({
-        baseUrl: live.baseUrl,
-        apiKey: live.apiKey,
+        baseUrl: liveCfg.baseUrl,
+        apiKey: liveCfg.apiKey,
         opType: "KEY",
         opCommand: "SIGN",
         originalMessage: encodeIntent(intent),
@@ -662,7 +803,9 @@ trySignBtn.addEventListener("click", async () => {
     signChip.textContent = "Error";
     signChip.className = "chip bad";
     const msg = humanizeError(e);
-    setStatus("bad", msg.title, msg.body, msg.tech);
+    vaultState = "unreachable";
+    refreshVaultUi();
+    setStatus("bad", msg.title, msg.body, msg.tech, { vaultActions: true });
     addActivity("bad", msg.title, msg.body);
   } finally {
     trySignBtn.classList.remove("busy");
@@ -690,13 +833,18 @@ tryWrongBtn.addEventListener("click", () => {
 document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
 refreshHints();
 
-if (live) {
-  modeBadge.dataset.mode = "live";
-  modeBadge.textContent = "Live";
-} else {
-  modeBadge.dataset.mode = "preview";
-  modeBadge.textContent = "Local";
-}
+vaultAction.addEventListener("click", () => {
+  if (vaultState === "live") disconnectVault();
+  else void connectVault();
+});
+
+document.querySelector("#retryVault")!.addEventListener("click", () => {
+  void connectVault();
+});
+
+document.querySelector("#goOffline")!.addEventListener("click", () => {
+  disconnectVault();
+});
 
 workspace = loadWorkspace();
 if (workspace) {
@@ -705,4 +853,6 @@ if (workspace) {
 } else {
   showView("landing");
 }
+refreshVaultUi();
 sync();
+void initVault();

@@ -203,3 +203,21 @@ export function liveConfig(): { baseUrl: string; apiKey: string } | null {
   // Relative "/fcc" is proxied by Vite to the local TEE (avoids browser CORS).
   return { baseUrl, apiKey };
 }
+
+/** Lightweight reachability check for Connect / Disconnect UI. */
+export async function probeVault(
+  baseUrl: string,
+  timeoutMs = 5000
+): Promise<boolean> {
+  const url = `${baseUrl.replace(/\/$/, "")}/info`;
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
