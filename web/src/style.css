@@ -404,6 +404,90 @@ main {
   color: var(--ink);
 }
 
+.faq {
+  margin: 0 0 1.5rem;
+}
+
+.faq h2 {
+  margin: 0 0 0.85rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.faq-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
+  padding: 0.15rem 0.95rem;
+}
+
+.faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  font-weight: 550;
+  font-size: 0.95rem;
+  padding: 0.85rem 0;
+  color: var(--ink);
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::after {
+  content: "+";
+  float: right;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.faq-item[open] summary::after {
+  content: "–";
+}
+
+.faq-item p {
+  margin: 0 0 0.95rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.connect-cta {
+  margin: 0 0 2rem;
+  padding: 1.35rem 1.25rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brand-soft) 45%, var(--surface));
+  text-align: center;
+  display: grid;
+  gap: 0.55rem;
+  justify-items: center;
+}
+
+.connect-cta h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+}
+
+.connect-cta p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 28rem;
+  line-height: 1.45;
+}
+
+.connect-cta .btn {
+  margin-top: 0.35rem;
+}
+
 .use-cases {
   margin-bottom: 1rem;
 }
