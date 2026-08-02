@@ -51,6 +51,13 @@ export const instructionSenderAbi = [
   },
   {
     type: "function",
+    name: "setExtensionId",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
     name: "_extensionId",
     stateMutability: "view",
     inputs: [],
@@ -215,11 +222,14 @@ export type OnchainInstructionResult = {
   explorerTx: string;
 };
 
-export async function sendSetPolicyOnchain(opts: {
+/**
+ * One-time on-chain bind: InstructionSender discovers its Flare extension id.
+ * Safe to call repeatedly — no-op when already set.
+ */
+export async function ensureExtensionIdOnchain(opts: {
   walletClient: WalletClient;
   account: Address;
-  policyBytes: Hex;
-}): Promise<OnchainInstructionResult> {
+}): Promise<{ alreadySet: boolean; txHash?: Hex; explorerTx?: string }> {
   const cfg = chainConfig();
   if (!cfg) throw new Error("Chain config missing");
   const publicClient = publicClientFrom(cfg);
@@ -229,11 +239,61 @@ export async function sendSetPolicyOnchain(opts: {
     abi: instructionSenderAbi,
     functionName: "_extensionId",
   });
-  if (extId === 0n) {
-    throw new Error(
-      "InstructionSender extension ID is not set on-chain. Run post-build / setExtensionId first."
-    );
+  if (extId !== 0n) {
+    return { alreadySet: true };
   }
+
+  try {
+    const hash = await opts.walletClient.writeContract({
+      chain: coston2,
+      account: opts.account,
+      address: cfg.instructionSender,
+      abi: instructionSenderAbi,
+      functionName: "setExtensionId",
+    });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (receipt.status !== "success") {
+      throw new Error("setExtensionId transaction reverted on Coston2");
+    }
+    const after = await publicClient.readContract({
+      address: cfg.instructionSender,
+      abi: instructionSenderAbi,
+      functionName: "_extensionId",
+    });
+    if (after === 0n) {
+      throw new Error(
+        "setExtensionId mined but extension id is still 0 — contract may not be registered as this extension’s InstructionSender."
+      );
+    }
+    return {
+      alreadySet: false,
+      txHash: hash,
+      explorerTx: explorerTxUrl(cfg.explorerUrl, hash),
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.toLowerCase().includes("extension id not found")) {
+      throw new Error(
+        "Extension not registered for this InstructionSender. From tee/: ./scripts/post-build.sh (or re-run pre-build + register)."
+      );
+    }
+    throw e;
+  }
+}
+
+export async function sendSetPolicyOnchain(opts: {
+  walletClient: WalletClient;
+  account: Address;
+  policyBytes: Hex;
+}): Promise<OnchainInstructionResult> {
+  const cfg = chainConfig();
+  if (!cfg) throw new Error("Chain config missing");
+  const publicClient = publicClientFrom(cfg);
+
+  await ensureExtensionIdOnchain({
+    walletClient: opts.walletClient,
+    account: opts.account,
+  });
 
   const hash = await opts.walletClient.writeContract({
     chain: coston2,
@@ -268,6 +328,11 @@ export async function sendSignOnchain(opts: {
   const cfg = chainConfig();
   if (!cfg) throw new Error("Chain config missing");
   const publicClient = publicClientFrom(cfg);
+
+  await ensureExtensionIdOnchain({
+    walletClient: opts.walletClient,
+    account: opts.account,
+  });
 
   const hash = await opts.walletClient.writeContract({
     chain: coston2,

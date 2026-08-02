@@ -960,7 +960,11 @@ setPolicyBtn.addEventListener("click", async () => {
 
   policyLocking = true;
   sync();
-  setStatus("ok", "Confirm in wallet", "setPolicy on InstructionSender (Coston2)…");
+  setStatus(
+    "ok",
+    "Confirm in wallet",
+    "First-time activate (setExtensionId) if needed, then setPolicy on Coston2…"
+  );
   try {
     const onchain = await sendSetPolicyOnchain({
       walletClient,
