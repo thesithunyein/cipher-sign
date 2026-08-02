@@ -270,6 +270,42 @@
             </div>
           </details>
         </div>
+
+        <div class="panel proof-panel" id="proofPanel" hidden>
+          <div class="panel-top">
+            <h2>Approval proof</h2>
+            <span class="chip ok">Verified by vault</span>
+          </div>
+          <p class="proof-explain">
+            This is a signature from the CipherSign vault (Flare TEE), not a logo badge.
+            It proves the payout passed your locked rules. Demo path uses
+            <code>/direct</code> — so there is no Coston2 explorer payment link yet.
+          </p>
+          <label>
+            Proof ID
+            <div class="field">
+              <input id="proofId" class="mono" type="text" readonly value="" />
+              <button type="button" class="field-btn" id="copyProofId" title="Copy proof ID" aria-label="Copy proof ID">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </label>
+          <label>
+            Full vault signature
+            <textarea id="proofSig" class="mono proof-sig" readonly rows="3"></textarea>
+          </label>
+          <div class="cta-row">
+            <button type="button" class="btn quiet" id="copyProof">Copy full proof</button>
+            <a
+              class="btn quiet"
+              id="proofDocs"
+              href="https://dev.flare.network/fcc/guides/getting-started"
+              target="_blank"
+              rel="noreferrer"
+              >Flare FCC docs</a
+            >
+          </div>
+        </div>
       </section>
 
       <section class="view" id="view-activity" hidden>

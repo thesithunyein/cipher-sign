@@ -72,10 +72,15 @@ function outsiderAddress(): `0x${string}` {
 
 let policy: Policy | null = null;
 let lastSig = "";
+let lastError = "";
 let toastTimer = 0;
 let workspace: Workspace | null = null;
 let vaultState: VaultState = "checking";
 let policyLocking = false;
+
+const proofPanel = document.querySelector<HTMLElement>("#proofPanel")!;
+const proofIdInput = document.querySelector<HTMLInputElement>("#proofId")!;
+const proofSigArea = document.querySelector<HTMLTextAreaElement>("#proofSig")!;
 
 const policyChip = document.querySelector<HTMLElement>("#policyChip")!;
 const signChip = document.querySelector<HTMLElement>("#signChip")!;
@@ -175,6 +180,8 @@ function disconnectVault(opts?: { quiet?: boolean }) {
   vaultState = liveCfg ? "unreachable" : "unavailable";
   policy = null;
   lastSig = "";
+  lastError = "";
+  hideProof();
   policyChip.textContent = "Not locked";
   policyChip.className = "chip";
   signChip.textContent = "Waiting";
@@ -283,6 +290,34 @@ function humanizeError(err: unknown): {
   };
 }
 
+function proofIdFromSig(sig: string): string {
+  if (!sig) return "";
+  try {
+    return keccak256(toBytes(sig)).slice(0, 18);
+  } catch {
+    return `${sig.slice(0, 10)}…${sig.slice(-6)}`;
+  }
+}
+
+function showProof(sig: string, summary: string) {
+  lastSig = sig;
+  proofPanel.hidden = !sig;
+  if (!sig) {
+    proofIdInput.value = "";
+    proofSigArea.value = "";
+    return;
+  }
+  proofIdInput.value = proofIdFromSig(sig);
+  proofSigArea.value = sig;
+  setStatus("ok", "Payout approved", `${summary} · Proof ID ${proofIdInput.value}`);
+}
+
+function hideProof() {
+  proofPanel.hidden = true;
+  proofIdInput.value = "";
+  proofSigArea.value = "";
+}
+
 function setStatus(
   kind: "idle" | "ok" | "bad",
   title: string,
@@ -297,16 +332,17 @@ function setStatus(
   statusEl.hidden = false;
   statusEl.dataset.kind = kind;
   statusTitle.textContent = title;
-  // Prefer human body; append short tech when it adds signal.
-  statusBody.textContent =
-    tech && !body.includes(tech.slice(0, 40)) && kind === "bad"
-      ? `${body}`
-      : body;
-  copySigBtn.hidden = !(kind === "ok" && Boolean(lastSig));
-  // Allow copying the raw error for support.
+  statusBody.textContent = body;
   if (kind === "bad" && tech) {
+    lastError = tech;
     copySigBtn.hidden = false;
-    lastSig = tech;
+    copySigBtn.title = "Copy error details";
+  } else if (kind === "ok" && lastSig) {
+    lastError = "";
+    copySigBtn.hidden = false;
+    copySigBtn.title = "Copy approval proof";
+  } else {
+    copySigBtn.hidden = true;
   }
   statusEl.classList.remove("is-updating");
   void statusEl.offsetWidth;
@@ -642,7 +678,16 @@ document.querySelector("#matchRecipient")!.addEventListener("click", () => {
 });
 
 copySigBtn.addEventListener("click", () => {
-  if (lastSig) void copyText(lastSig, "Proof copied");
+  const payload = lastError || lastSig;
+  if (payload) void copyText(payload, lastError ? "Error copied" : "Proof copied");
+});
+
+document.querySelector("#copyProof")?.addEventListener("click", () => {
+  if (lastSig) void copyText(lastSig, "Full proof copied");
+});
+
+document.querySelector("#copyProofId")?.addEventListener("click", () => {
+  if (proofIdInput.value) void copyText(proofIdInput.value, "Proof ID copied");
 });
 
 document.querySelector("#maxAmount")!.addEventListener("input", () => {
@@ -702,6 +747,7 @@ setPolicyBtn.addEventListener("click", async () => {
     }
     policy = next;
     lastSig = "";
+    hideProof();
     policyChip.textContent = "Locked";
     policyChip.className = "chip ok";
     signChip.textContent = "Waiting";
@@ -753,6 +799,7 @@ trySignBtn.addEventListener("click", async () => {
       });
       if (res.status !== 1) {
         lastSig = "";
+        hideProof();
         signChip.textContent = "Refused";
         signChip.className = "chip bad";
         const msg = (res.log ?? "").replace(/^error:\s*/i, "");
@@ -767,21 +814,18 @@ trySignBtn.addEventListener("click", async () => {
         document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
         return;
       }
-      lastSig = res.data ?? "";
+      const sig = res.data ?? "";
       signChip.textContent = "Approved";
       signChip.className = "chip ok";
-      setStatus(
-        "ok",
-        "Payout approved",
-        `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
-      );
+      const summary = `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`;
+      showProof(sig, summary);
       addActivity(
         "ok",
         "Payout approved",
-        `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
+        `${summary} · proof ${proofIdFromSig(sig) || "saved"}`
       );
       document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
-      toast("Payout approved");
+      toast("Approved — proof ready below");
       return;
     }
 
@@ -789,6 +833,7 @@ trySignBtn.addEventListener("click", async () => {
     const err = check(policy, intent);
     if (err) {
       lastSig = "";
+      hideProof();
       signChip.textContent = "Refused";
       signChip.className = "chip bad";
       const body = ERRORS[err] ?? err;
@@ -804,23 +849,20 @@ trySignBtn.addEventListener("click", async () => {
 
     const hex = encodeIntent(intent);
     const sig = fakeSig(hex);
-    lastSig = sig;
     signChip.textContent = "Approved";
     signChip.className = "chip ok";
-    setStatus(
-      "ok",
-      "Payout approved",
-      `${intent.amount.toLocaleString("en-US")} to ${short(intent.recipient)}`
-    );
+    const summary = `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`;
+    showProof(sig, summary);
     addActivity(
       "ok",
       "Payout approved",
-      `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
+      `${summary} · proof ${proofIdFromSig(sig)}`
     );
     document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
-    toast("Payout approved");
+    toast("Approved — proof ready below");
   } catch (e) {
     lastSig = "";
+    hideProof();
     signChip.textContent = "Error";
     signChip.className = "chip bad";
     const msg = humanizeError(e);

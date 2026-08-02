@@ -661,6 +661,47 @@ main {
   border-top: 1px solid var(--line);
 }
 
+.proof-panel {
+  margin-top: 0.85rem;
+}
+
+.proof-panel[hidden] {
+  display: none !important;
+}
+
+.proof-explain {
+  margin: 0 0 0.95rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.proof-explain code {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 0.82em;
+  color: var(--ink);
+}
+
+.proof-sig {
+  width: 100%;
+  resize: vertical;
+  min-height: 4.5rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--elevated);
+  color: var(--ink);
+  font: inherit;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  padding: 0.7rem 0.8rem;
+}
+
+.proof-sig:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--line));
+}
+
 .trust-line {
   margin: 1rem 0 0;
   font-size: 0.78rem;
