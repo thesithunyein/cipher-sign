@@ -59,7 +59,9 @@ services:
       - SIGN_PORT=8882
       - EXTENSION_PORT=8883
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - MODE=1
+      # MODE=1 + SIMULATED_TEE=true → local/hackathon simulated attestation
+      # MODE=0 + SIMULATED_TEE=false → production Confidential Space (GCP)
+      - MODE=${TEE_MODE:-1}
       - LOCAL_MODE=${LOCAL_MODE:-false}
       - SIMULATED_TEE=${SIMULATED_TEE:-true}
       # Must match proxy chain_id (114) or TEE_INFO signature verify panics

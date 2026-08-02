@@ -1,14 +1,24 @@
 import "./style.css";
 import { getAddress, keccak256, toBytes, type Hex } from "viem";
+import type { Address, WalletClient } from "viem";
 import {
   encodeIntent,
   encodePolicy,
   liveConfig,
+  pollInstructionResult,
   probeVault,
-  sendDirectInstruction,
   type SignIntent,
   type SignPolicy,
 } from "./fcc";
+import {
+  chainConfig,
+  classifyAttestation,
+  connectWallet,
+  hasWallet,
+  sendSetPolicyOnchain,
+  sendSignOnchain,
+  type TeeAttestationKind,
+} from "./chain";
 import { verifyApproval } from "./verify";
 
 type Policy = SignPolicy;
@@ -77,21 +87,30 @@ let lastError = "";
 let lastProofSummary = "";
 let lastVerifyDetail = "";
 let lastRecovered: `0x${string}` | null = null;
+let lastTxHash: Hex | null = null;
+let lastExplorerTx = "";
 let vaultAddress: `0x${string}` | null = null;
+let attestationKind: TeeAttestationKind = "unknown";
+let walletAddress: `0x${string}` | null = null;
+let walletClient: WalletClient | null = null;
+let walletAccount: Address | null = null;
 let proofBlobUrl = "";
 let toastTimer = 0;
 let workspace: Workspace | null = null;
 let vaultState: VaultState = "checking";
 let policyLocking = false;
 
+const chainCfg = chainConfig();
 const proofPanel = document.querySelector<HTMLElement>("#proofPanel")!;
 const proofIdInput = document.querySelector<HTMLInputElement>("#proofId")!;
+const proofTxInput = document.querySelector<HTMLInputElement>("#proofTx")!;
 const proofSignerInput = document.querySelector<HTMLInputElement>("#proofSigner")!;
 const proofVerifyInput = document.querySelector<HTMLInputElement>("#proofVerify")!;
 const proofChip = document.querySelector<HTMLElement>("#proofChip")!;
 const proofExplain = document.querySelector<HTMLElement>("#proofExplain")!;
 const proofSigArea = document.querySelector<HTMLTextAreaElement>("#proofSig")!;
 const openProofBtn = document.querySelector<HTMLAnchorElement>("#openProof")!;
+const openExplorerBtn = document.querySelector<HTMLAnchorElement>("#openExplorer")!;
 
 const policyChip = document.querySelector<HTMLElement>("#policyChip")!;
 const signChip = document.querySelector<HTMLElement>("#signChip")!;
@@ -116,9 +135,15 @@ const teamNameInput = document.querySelector<HTMLInputElement>("#teamName")!;
 const vaultAction = document.querySelector<HTMLButtonElement>("#vaultAction")!;
 const liveCfg = liveConfig();
 
-/** App (Home / Rules / Send / Activity) only after vault Connect. */
+/** App only after wallet + live vault (on-chain InstructionSender path). */
 function isAuthed(): boolean {
-  return vaultState === "live" && Boolean(liveCfg);
+  return (
+    vaultState === "live" &&
+    Boolean(liveCfg) &&
+    Boolean(chainCfg) &&
+    Boolean(walletAddress) &&
+    Boolean(walletClient)
+  );
 }
 
 function refreshSessionChrome() {
@@ -128,19 +153,25 @@ function refreshSessionChrome() {
   if (authed && workspace) teamChip.textContent = workspace.team;
 
   vaultAction.hidden = false;
-  vaultAction.disabled = vaultState === "checking" || !liveCfg;
-  if (!liveCfg) {
+  vaultAction.disabled =
+    vaultState === "checking" || !liveCfg || !chainCfg || !hasWallet();
+  if (!liveCfg || !chainCfg) {
     vaultAction.textContent = "Unavailable";
-    vaultAction.title = "Vault is not configured";
+    vaultAction.title = "Vault or InstructionSender is not configured";
+  } else if (!hasWallet()) {
+    vaultAction.textContent = "Install wallet";
+    vaultAction.title = "MetaMask (or Coston2 wallet) required";
   } else if (vaultState === "checking") {
     vaultAction.textContent = "Connecting…";
-    vaultAction.title = "Connecting";
+    vaultAction.title = "Connecting wallet + vault";
   } else if (authed) {
     vaultAction.textContent = "Disconnect";
-    vaultAction.title = "Sign out of vault";
+    vaultAction.title = walletAddress
+      ? `Disconnect ${short(walletAddress)}`
+      : "Disconnect";
   } else {
-    vaultAction.textContent = "Connect";
-    vaultAction.title = "Connect secure vault";
+    vaultAction.textContent = "Connect wallet";
+    vaultAction.title = "Connect wallet on Coston2";
   }
 }
 
@@ -150,36 +181,66 @@ function refreshVaultUi() {
 }
 
 async function connectVault(opts?: { quiet?: boolean }) {
-  if (!liveCfg) {
+  if (!liveCfg || !chainCfg) {
     vaultState = "unavailable";
     refreshVaultUi();
-    if (!opts?.quiet) toast("Vault not configured");
+    if (!opts?.quiet) toast("Vault / InstructionSender not configured");
     return false;
   }
+  if (!hasWallet()) {
+    if (!opts?.quiet) toast("Install MetaMask first");
+    return false;
+  }
+
   localStorage.setItem(VAULT_PREF_KEY, "live");
   vaultState = "checking";
   refreshVaultUi();
+
+  try {
+    const wallet = await connectWallet();
+    walletAddress = wallet.address;
+    walletClient = wallet.walletClient;
+    walletAccount = wallet.account;
+  } catch (e) {
+    localStorage.removeItem(VAULT_PREF_KEY);
+    vaultState = "unreachable";
+    walletAddress = null;
+    walletClient = null;
+    walletAccount = null;
+    refreshVaultUi();
+    if (!opts?.quiet) {
+      toast(e instanceof Error ? e.message : "Wallet connect failed");
+    }
+    showView("landing");
+    return false;
+  }
 
   const probe = await probeVault(liveCfg.baseUrl);
   if (!probe.ok) {
     localStorage.removeItem(VAULT_PREF_KEY);
     vaultState = "unreachable";
     vaultAddress = null;
+    walletAddress = null;
+    walletClient = null;
+    walletAccount = null;
     refreshVaultUi();
-    if (!opts?.quiet) toast("Could not connect — vault offline");
+    if (!opts?.quiet) toast("Wallet ok — TEE vault offline");
     showView("landing");
     return false;
   }
 
   vaultAddress = probe.vaultAddress;
+  attestationKind = classifyAttestation(probe.info);
   vaultState = "live";
   refreshVaultUi();
   if (!opts?.quiet) {
-    toast(
-      vaultAddress
-        ? `Connected · vault ${short(vaultAddress)}`
-        : "Connected · live vault"
-    );
+    const teeLabel =
+      attestationKind === "hardware"
+        ? "hardware TEE"
+        : attestationKind === "simulated"
+          ? "simulated TEE (not production hardware)"
+          : "TEE";
+    toast(`Connected · ${short(walletAddress!)} · ${teeLabel}`);
   }
 
   if (!workspace) {
@@ -195,10 +256,16 @@ function disconnectVault(opts?: { quiet?: boolean }) {
   vaultState = liveCfg ? "unreachable" : "unavailable";
   policy = null;
   vaultAddress = null;
+  attestationKind = "unknown";
+  walletAddress = null;
+  walletClient = null;
+  walletAccount = null;
   lastSig = "";
   lastError = "";
   lastRecovered = null;
   lastVerifyDetail = "";
+  lastTxHash = null;
+  lastExplorerTx = "";
   hideProof();
   policyChip.textContent = "Not locked";
   policyChip.className = "chip";
@@ -301,6 +368,24 @@ function humanizeError(err: unknown): {
       tech,
     };
   }
+  if (
+    lower.includes("user rejected") ||
+    lower.includes("rejected the request") ||
+    lower.includes("denied transaction")
+  ) {
+    return {
+      title: "Wallet rejected",
+      body: "You rejected the Coston2 transaction in your wallet.",
+      tech,
+    };
+  }
+  if (lower.includes("insufficient funds")) {
+    return {
+      title: "Need C2FLR",
+      body: "Fund your wallet on Coston2 for gas + InstructionSender fee.",
+      tech,
+    };
+  }
   return {
     title: "Something went wrong",
     body: tech.slice(0, 220) || "We could not complete that request.",
@@ -331,6 +416,8 @@ function buildProofReceipt(opts: {
   verify: string;
   signer: string;
   expectedVault: string;
+  explorerTx: string;
+  txHash: string;
 }): string {
   const when = new Date().toISOString();
   const esc = (s: string) =>
@@ -352,13 +439,15 @@ function buildProofReceipt(opts: {
   .mono { font-family: "Geist Mono", ui-monospace, Menlo, Consolas, monospace; word-break: break-all; }
   .box { background: #121218; border: 1px solid #27272a; border-radius: 8px; padding: .85rem 1rem; }
   .ok { color: #4ade80; } .bad { color: #f87171; }
+  a { color: #a78bfa; }
 </style>
 </head>
 <body>
 <main>
   <p class="${opts.verify.startsWith("Verified") || opts.verify.startsWith("Recovered") ? "ok" : "bad"}">${esc(opts.verify)}</p>
   <h1>${esc(opts.summary)}</h1>
-  <p class="muted">Policy-gated approval from the CipherSign Flare TEE vault. Authenticity = ECDSA recover of the vault signer, not a UI badge and not a payment explorer tx.</p>
+  <p class="muted">On-chain InstructionSender.sign on Flare Coston2 + policy-gated TEE signature. Explorer tx is the public confirmation; ECDSA recover checks the vault key.</p>
+  <div class="row"><span class="label">Coston2 tx</span><div class="box mono"><a href="${esc(opts.explorerTx)}" target="_blank" rel="noreferrer">${esc(opts.txHash || opts.explorerTx || "—")}</a></div></div>
   <div class="row"><span class="label">Vault signer (recovered)</span><div class="box mono">${esc(opts.signer || "—")}</div></div>
   <div class="row"><span class="label">Expected vault</span><div class="box mono">${esc(opts.expectedVault || "not reported by /state yet")}</div></div>
   <div class="row"><span class="label">Proof ID</span><div class="box mono">${esc(opts.proofId)}</div></div>
@@ -369,9 +458,15 @@ function buildProofReceipt(opts: {
 </html>`;
 }
 
-async function showProof(sig: string, summary: string) {
+async function showProof(
+  sig: string,
+  summary: string,
+  explorer?: { txHash: Hex; explorerTx: string }
+) {
   lastSig = sig;
   lastProofSummary = summary;
+  lastTxHash = explorer?.txHash ?? null;
+  lastExplorerTx = explorer?.explorerTx ?? "";
   proofPanel.hidden = !sig;
   if (!sig) {
     hideProof();
@@ -382,6 +477,8 @@ async function showProof(sig: string, summary: string) {
   proofChip.className = "chip";
   proofVerifyInput.value = "Recovering signer…";
   proofSignerInput.value = "";
+  proofTxInput.value = lastTxHash ?? "";
+  openExplorerBtn.href = lastExplorerTx || "#";
   proofIdInput.value = proofIdFromSig(sig);
   proofSigArea.value = sig;
 
@@ -401,8 +498,8 @@ async function showProof(sig: string, summary: string) {
     : "Not verified";
   proofChip.className = verified.ok ? "chip ok" : "chip bad";
   proofExplain.textContent = verified.ok
-    ? "This approval was signed by the vault key after locked rules passed."
-    : "This payload failed cryptographic checks. Do not treat it as a real approval.";
+    ? "On-chain InstructionSender tx confirmed; vault signature verified."
+    : "On-chain tx may exist, but the vault payload failed cryptographic checks.";
 
   const proofId = proofIdInput.value;
   revokeProofBlob();
@@ -415,6 +512,8 @@ async function showProof(sig: string, summary: string) {
         verify: verified.detail,
         signer: verified.recovered ?? "",
         expectedVault: vaultAddress ?? "",
+        explorerTx: lastExplorerTx,
+        txHash: lastTxHash ?? "",
       }),
     ],
     { type: "text/html" }
@@ -424,23 +523,29 @@ async function showProof(sig: string, summary: string) {
 
   setStatus(
     verified.ok ? "ok" : "bad",
-    verified.ok ? "Payout approved" : "Approval failed verification",
-    `${summary} · ${verified.detail}`
+    verified.ok ? "Payout approved on-chain" : "Approval failed verification",
+    lastExplorerTx
+      ? `${summary} · ${verified.detail} · ${lastExplorerTx}`
+      : `${summary} · ${verified.detail}`
   );
 }
 
 function hideProof() {
   proofPanel.hidden = true;
   proofIdInput.value = "";
+  proofTxInput.value = "";
   proofSignerInput.value = "";
   proofVerifyInput.value = "";
   proofSigArea.value = "";
   lastProofSummary = "";
   lastRecovered = null;
   lastVerifyDetail = "";
+  lastTxHash = null;
+  lastExplorerTx = "";
   proofChip.textContent = "Checking…";
   proofChip.className = "chip";
   openProofBtn.href = "#";
+  openExplorerBtn.href = "#";
   revokeProofBlob();
 }
 
@@ -796,6 +901,8 @@ document.querySelector("#copyProof")?.addEventListener("click", () => {
   const payload = [
     "CipherSign approval proof",
     `Summary: ${lastProofSummary}`,
+    `Coston2 tx: ${lastTxHash ?? ""}`,
+    `Explorer: ${lastExplorerTx}`,
     `Verification: ${lastVerifyDetail}`,
     `Vault signer: ${lastRecovered ?? ""}`,
     `Expected vault: ${vaultAddress ?? ""}`,
@@ -823,8 +930,8 @@ document.querySelector("#allowlist")!.addEventListener("input", refreshDashboard
 
 setPolicyBtn.addEventListener("click", async () => {
   if (policyLocking) return;
-  if (!isAuthed() || !liveCfg) {
-    toast("Connect first");
+  if (!isAuthed() || !liveCfg || !walletClient || !walletAccount) {
+    toast("Connect wallet first");
     showView("landing");
     return;
   }
@@ -849,24 +956,31 @@ setPolicyBtn.addEventListener("click", async () => {
     );
     return;
   }
-  // Write normalized checksums back into the field.
   input.value = next.allowedRecipients.join(", ");
 
   policyLocking = true;
   sync();
+  setStatus("ok", "Confirm in wallet", "setPolicy on InstructionSender (Coston2)…");
   try {
-    const res = await sendDirectInstruction({
+    const onchain = await sendSetPolicyOnchain({
+      walletClient,
+      account: walletAccount,
+      policyBytes: encodePolicy(next),
+    });
+    setStatus(
+      "ok",
+      "Waiting for TEE",
+      `Tx confirmed · polling instruction ${short(onchain.instructionId)}`
+    );
+    const res = await pollInstructionResult({
       baseUrl: liveCfg.baseUrl,
-      apiKey: liveCfg.apiKey,
-      opType: "KEY",
-      opCommand: "SET_POLICY",
-      originalMessage: encodePolicy(next),
-      timeoutMs: 25_000,
+      instructionId: onchain.instructionId,
+      timeoutMs: 180_000,
     });
     if (res.status !== 1) {
       const log = (res.log ?? "Rules were refused.").replace(/^error:\s*/i, "");
-      setStatus("bad", "Could not lock", ERRORS[log] ?? log);
-      addActivity("bad", "Lock failed", log);
+      setStatus("bad", "Could not lock", ERRORS[log] ?? log, onchain.explorerTx);
+      addActivity("bad", "Lock failed", `${log} · ${onchain.explorerTx}`);
       return;
     }
     policy = next;
@@ -877,9 +991,9 @@ setPolicyBtn.addEventListener("click", async () => {
     signChip.textContent = "Waiting";
     signChip.className = "chip";
     const summary = `${next.allowedRecipients.length} approved · limit ${next.maxAmount.toLocaleString("en-US")}`;
-    setStatus("ok", "Rules locked", summary);
-    addActivity("ok", "Rules locked", summary);
-    toast("Rules locked");
+    setStatus("ok", "Rules locked on-chain", `${summary} · ${onchain.explorerTx}`);
+    addActivity("ok", "Rules locked", `${summary} · ${onchain.txHash}`);
+    toast("Rules locked on-chain");
     showView("send");
   } catch (e) {
     const msg = humanizeError(e);
@@ -893,8 +1007,8 @@ setPolicyBtn.addEventListener("click", async () => {
 });
 
 trySignBtn.addEventListener("click", async () => {
-  if (!isAuthed() || !liveCfg) {
-    toast("Connect the live vault first");
+  if (!isAuthed() || !liveCfg || !walletClient || !walletAccount) {
+    toast("Connect wallet first");
     showView("landing");
     return;
   }
@@ -918,16 +1032,26 @@ trySignBtn.addEventListener("click", async () => {
   trySignBtn.classList.add("busy");
   trySignBtn.disabled = true;
   try {
-    // Refresh vault address from TEE state when possible.
     const probe = await probeVault(liveCfg.baseUrl, 3000);
     if (probe.vaultAddress) vaultAddress = probe.vaultAddress;
+    attestationKind = classifyAttestation(probe.info);
 
-    const res = await sendDirectInstruction({
+    setStatus("ok", "Confirm in wallet", "sign on InstructionSender (Coston2)…");
+    const onchain = await sendSignOnchain({
+      walletClient,
+      account: walletAccount,
+      intentBytes: encodeIntent(intent),
+    });
+    setStatus(
+      "ok",
+      "Waiting for TEE",
+      `Tx ${short(onchain.txHash)} · polling vault result…`
+    );
+
+    const res = await pollInstructionResult({
       baseUrl: liveCfg.baseUrl,
-      apiKey: liveCfg.apiKey,
-      opType: "KEY",
-      opCommand: "SIGN",
-      originalMessage: encodeIntent(intent),
+      instructionId: onchain.instructionId,
+      timeoutMs: 180_000,
     });
     if (res.status !== 1) {
       lastSig = "";
@@ -937,11 +1061,11 @@ trySignBtn.addEventListener("click", async () => {
       const msg = (res.log ?? "").replace(/^error:\s*/i, "");
       const body =
         ERRORS[msg] ?? res.log ?? "This payout breaks the locked rules.";
-      setStatus("bad", "Payout blocked", body);
+      setStatus("bad", "Payout blocked", `${body} · ${onchain.explorerTx}`);
       addActivity(
         "bad",
         "Payout blocked",
-        `${fmt(intent.amount.toString())} to ${short(intent.recipient)} · ${body}`
+        `${fmt(intent.amount.toString())} to ${short(intent.recipient)} · ${body} · ${onchain.txHash}`
       );
       document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
       return;
@@ -950,21 +1074,32 @@ trySignBtn.addEventListener("click", async () => {
     if (!sig) {
       signChip.textContent = "Error";
       signChip.className = "chip bad";
-      setStatus("bad", "Empty approval", "Vault returned no signature payload.");
+      setStatus(
+        "bad",
+        "Empty approval",
+        `Vault returned no signature. Tx: ${onchain.explorerTx}`
+      );
       return;
     }
     const summary = `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`;
-    await showProof(sig, summary);
+    await showProof(sig, summary, {
+      txHash: onchain.txHash,
+      explorerTx: onchain.explorerTx,
+    });
     const verifiedOk = proofChip.textContent === "Verified";
     signChip.textContent = verifiedOk ? "Approved" : "Unverified";
     signChip.className = verifiedOk ? "chip ok" : "chip bad";
     addActivity(
       verifiedOk ? "ok" : "bad",
       verifiedOk ? "Payout approved" : "Approval unverified",
-      `${summary} · ${lastVerifyDetail || proofIdFromSig(sig)}`
+      `${summary} · ${onchain.txHash} · ${lastVerifyDetail || proofIdFromSig(sig)}`
     );
     document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
-    toast(verifiedOk ? "Approved — cryptographically verified" : "Payload failed verify");
+    toast(
+      verifiedOk
+        ? "Approved on-chain — open explorer link in proof"
+        : "Tx sent but payload failed verify"
+    );
   } catch (e) {
     lastSig = "";
     hideProof();

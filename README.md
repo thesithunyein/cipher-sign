@@ -54,14 +54,14 @@ Product brief & market notes: [docs/PRODUCT.md](docs/PRODUCT.md)
 
 ---
 
-## Try it (live vault required)
+## Try it (wallet + live vault required)
 
 1. Open **[cipher-sign.vercel.app](https://cipher-sign.vercel.app)** with the operator vault online  
-2. **Connect** → pick Fees / Payroll / Rewards → **Lock rules**  
-3. **Approve payout** — proof panel recovers the vault signer cryptographically  
-4. Try **Over the limit** / **Wrong person** — vault blocks (not the browser)  
+2. **Connect wallet** (MetaMask on Coston2) → Fees / Payroll / Rewards → **Lock rules on-chain**  
+3. **Approve on-chain** — MetaMask tx to `InstructionSender`, then explorer link + vault signature verify  
+4. Try **Over the limit** / **Wrong person** — TEE blocks after the on-chain instruction  
 
-There is **no offline approve path**. If the vault is down, Connect fails — that is intentional.
+Product path is **InstructionSender**, not `/direct`. Hardware TEE = GCP Confidential Space — see [docs/PRODUCTION.md](docs/PRODUCTION.md).
 
 ---
 

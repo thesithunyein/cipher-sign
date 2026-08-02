@@ -97,9 +97,11 @@ function normalizeResult(parsed: Record<string, unknown>): DirectResult | null {
 async function pollActionResult(
   baseUrl: string,
   actionId: string,
-  timeoutMs = 60_000
+  timeoutMs = 60_000,
+  submissionTag?: string
 ): Promise<DirectResult> {
-  const url = `${baseUrl.replace(/\/$/, "")}/action/result/${actionId}?submissionTag=submit`;
+  const tag = submissionTag ? `?submissionTag=${submissionTag}` : "";
+  const url = `${baseUrl.replace(/\/$/, "")}/action/result/${actionId}${tag}`;
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const res = await fetch(url);
@@ -123,6 +125,22 @@ async function pollActionResult(
     return out;
   }
   throw new Error(`Timed out waiting for action result ${actionId}`);
+}
+
+/**
+ * Poll TEE result for an on-chain InstructionSender instruction id.
+ * (No submissionTag — that tag is only for POST /direct.)
+ */
+export async function pollInstructionResult(opts: {
+  baseUrl: string;
+  instructionId: string;
+  timeoutMs?: number;
+}): Promise<DirectResult> {
+  return pollActionResult(
+    opts.baseUrl,
+    opts.instructionId,
+    opts.timeoutMs ?? 180_000
+  );
 }
 
 /**
@@ -191,7 +209,7 @@ export async function sendDirectInstruction(opts: {
       `Direct API missing action id: ${text.slice(0, 240)}`
     );
   }
-  return pollActionResult(base, actionId, opts.timeoutMs ?? 60_000);
+  return pollActionResult(base, actionId, opts.timeoutMs ?? 60_000, "submit");
 }
 
 export function liveConfig(): { baseUrl: string; apiKey: string } | null {
@@ -209,17 +227,27 @@ export type VaultProbe = {
   vaultAddress: `0x${string}` | null;
 };
 
+export type VaultInfoProbe = VaultProbe & {
+  info: unknown | null;
+};
+
 /** Reachability + vault signer address from TEE /state when available. */
 export async function probeVault(
   baseUrl: string,
   timeoutMs = 5000
-): Promise<VaultProbe> {
+): Promise<VaultInfoProbe> {
   const base = baseUrl.replace(/\/$/, "");
   const ctrl = new AbortController();
   const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const infoRes = await fetch(`${base}/info`, { signal: ctrl.signal });
-    if (!infoRes.ok) return { ok: false, vaultAddress: null };
+    if (!infoRes.ok) return { ok: false, vaultAddress: null, info: null };
+    let info: unknown = null;
+    try {
+      info = await infoRes.json();
+    } catch {
+      info = null;
+    }
 
     let vaultAddress: `0x${string}` | null = null;
     try {
@@ -236,9 +264,9 @@ export async function probeVault(
     } catch {
       /* /state optional behind some proxies */
     }
-    return { ok: true, vaultAddress };
+    return { ok: true, vaultAddress, info };
   } catch {
-    return { ok: false, vaultAddress: null };
+    return { ok: false, vaultAddress: null, info: null };
   } finally {
     window.clearTimeout(timer);
   }

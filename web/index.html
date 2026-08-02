@@ -77,10 +77,10 @@
             <strong>spending limit</strong>. Wrong person or overpay gets blocked.
           </p>
           <div class="cta-row">
-            <button type="button" class="btn" id="startTeam">Connect</button>
+            <button type="button" class="btn" id="startTeam">Connect wallet</button>
             <a class="btn quiet" href="#faq">Q&amp;A</a>
           </div>
-          <p class="trust-line">Secured on Flare · 3 steps</p>
+          <p class="trust-line">Coston2 InstructionSender · wallet required</p>
         </div>
 
         <div class="glance reveal" style="--d: 2" id="how" aria-label="How CipherSign works">
@@ -111,7 +111,10 @@
             </details>
             <details class="faq-item">
               <summary>What does Connect do?</summary>
-              <p>Links to the CipherSign vault on Flare so you can lock rules and approve payouts.</p>
+              <p>
+                Connects your wallet on Flare Coston2 and checks the CipherSign TEE.
+                Lock and Approve submit real InstructionSender transactions on-chain.
+              </p>
             </details>
             <details class="faq-item">
               <summary>Where do I get wallet addresses?</summary>
@@ -128,9 +131,9 @@
             <details class="faq-item">
               <summary>How do I know an approval is real?</summary>
               <p>
-                After Approve, CipherSign recovers the ECDSA signer from the vault
-                payload and checks it against the vault address. Verified means the
-                signature came from your vault key — not a UI badge.
+                Approve sends an on-chain InstructionSender.sign tx on Coston2 (explorer
+                link). The TEE then returns a signature; the app recovers the vault
+                signer and matches it. No explorer tx = not a real product approval.
               </p>
             </details>
           </div>
@@ -227,7 +230,7 @@
             <button type="button" class="preset" data-expire="86400">24 hours</button>
           </div>
 
-          <button type="button" id="setPolicy" class="btn">Lock rules</button>
+          <button type="button" id="setPolicy" class="btn">Lock rules on-chain</button>
         </div>
       </section>
 
@@ -267,7 +270,7 @@
             </label>
           </div>
 
-          <button type="button" id="trySign" class="btn" disabled>Approve payout</button>
+          <button type="button" id="trySign" class="btn" disabled>Approve on-chain</button>
 
           <details class="safety">
             <summary>Check the vault will refuse bad payouts</summary>
@@ -285,8 +288,17 @@
             <span class="chip" id="proofChip">Checking…</span>
           </div>
           <p class="proof-explain" id="proofExplain">
-            Cryptographic check: recover the signer from the vault signature and match it to your vault address.
+            On-chain InstructionSender tx + ECDSA recover of the vault signer.
           </p>
+          <label>
+            Coston2 transaction
+            <div class="field">
+              <input id="proofTx" class="mono" type="text" readonly value="" />
+              <a class="field-btn" id="openExplorer" href="#" target="_blank" rel="noreferrer" title="Open explorer" aria-label="Open explorer">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 5h5v5M19 5l-9 9M10 5H5v14h14v-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+            </div>
+          </label>
           <label>
             Verification
             <input id="proofVerify" class="mono" type="text" readonly value="" />

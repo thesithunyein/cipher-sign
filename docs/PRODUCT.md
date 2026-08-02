@@ -79,11 +79,13 @@ Non-goals (v1):
 
 ## Product surface (v1 — real only)
 
-1. **Connect** → live Flare vault (required). No offline approve.  
-2. **Rules** → payee allowlist (1–5), spending limit, optional end time → **Lock** into TEE.  
-3. **Send** → request approval for one payout; vault **Approves** or **Blocks**.  
-4. **Proof** → vault returns ABI `(intent, signature)`; client **recovers signer** and checks against vault address from TEE state.  
-5. **Activity** → session log of locks / approvals / blocks.
+1. **Connect wallet** → MetaMask on Coston2 + live TEE `/info` (required).  
+2. **Rules** → allowlist + limit → **Lock on-chain** via `InstructionSender.setPolicy`.  
+3. **Send** → **Approve on-chain** via `InstructionSender.sign` (wallet tx + fee).  
+4. **Proof** → Coston2 explorer tx + TEE ABI `(intent, signature)` + ECDSA recover.  
+5. **Activity** → session log with tx hashes.  
+
+`POST /direct` is **not** a product path. See [PRODUCTION.md](PRODUCTION.md).
 
 Payout types (templates only — same engine):
 
@@ -97,13 +99,13 @@ Payout types (templates only — same engine):
 
 | Layer | Status |
 |-------|--------|
+| Wallet tx to `InstructionSender` on Coston2 | **Required** |
+| Explorer link for that tx | **Required** |
 | Rules enforced in TEE before SIGN | **Required** |
-| ECDSA signature over intent bytes | **Required** |
-| Client recover + match vault address | **Required** |
-| Coston2 explorer payment tx | Later (InstructionSender settlement path) |
+| ECDSA recover + match vault address | **Required** |
+| Hardware Confidential Space attestation | **Required for production TEE** (`SIMULATED_TEE=false`, `TEE_MODE=0` on GCP) |
 
-A green chip alone is **not** proof. A blob HTML page alone is **not** proof.  
-**Recovered signer === vault address** is the v1 authenticity check.
+A green chip alone is **not** proof. `/direct` alone is **not** the product.
 
 ---
 
