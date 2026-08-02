@@ -45,10 +45,22 @@
         </a>
 
         <nav class="app-nav" id="appNav" aria-label="Product" hidden>
-          <button type="button" class="app-nav-item" data-nav="home">Home</button>
-          <button type="button" class="app-nav-item" data-nav="rules">Rules</button>
-          <button type="button" class="app-nav-item" data-nav="send">Send</button>
-          <button type="button" class="app-nav-item" data-nav="activity">Activity</button>
+          <button type="button" class="app-nav-item" data-nav="home">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            Home
+          </button>
+          <button type="button" class="app-nav-item" data-nav="rules">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 8.5 4.3-1.1 7.5-4 7.5-8.5V6L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Rules
+          </button>
+          <button type="button" class="app-nav-item" data-nav="send">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Send
+          </button>
+          <button type="button" class="app-nav-item" data-nav="activity">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>
+            Activity
+          </button>
         </nav>
 
         <div class="nav-actions">
@@ -105,14 +117,23 @@
 
         <div class="value-row reveal" style="--d: 3" id="how">
           <article>
+            <span class="value-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M19 8v4M21 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </span>
             <h3>Control</h3>
             <p>Only people you approve can get paid.</p>
           </article>
           <article>
+            <span class="value-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V7Z" stroke="currentColor" stroke-width="1.5"/><path d="M8 14v3a4 4 0 0 0 8 0v-3" stroke="currentColor" stroke-width="1.5"/><path d="M12 3v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </span>
             <h3>Budget</h3>
             <p>A hard spending limit the vault cannot ignore.</p>
           </article>
           <article>
+            <span class="value-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 8.5 4.3-1.1 7.5-4 7.5-8.5V6L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
             <h3>Safety</h3>
             <p>Bad payouts are refused before money moves.</p>
           </article>
@@ -137,22 +158,34 @@
 
         <div class="dash-grid">
           <article class="dash-card">
-            <span class="dash-label">Rules</span>
+            <span class="dash-label">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+              Rules
+            </span>
             <strong id="dashRules">Not locked</strong>
             <span id="dashRulesMeta">Set who can get paid and your limit</span>
           </article>
           <article class="dash-card">
-            <span class="dash-label">Spending limit</span>
+            <span class="dash-label">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V7Z" stroke="currentColor" stroke-width="1.5"/><path d="M12 3v4M8 14v3a4 4 0 0 0 8 0v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Spending limit
+            </span>
             <strong id="dashLimit">-</strong>
             <span>Maximum for any single payout</span>
           </article>
           <article class="dash-card">
-            <span class="dash-label">Approved people</span>
+            <span class="dash-label">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M19 8v4M21 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Approved people
+            </span>
             <strong id="dashPeople">0</strong>
             <span>Can receive payouts</span>
           </article>
           <article class="dash-card">
-            <span class="dash-label">Vault</span>
+            <span class="dash-label">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 8.5 4.3-1.1 7.5-4 7.5-8.5V6L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+              Vault
+            </span>
             <strong id="dashVault">Starting</strong>
             <span id="dashVaultMeta">Connection status</span>
           </article>
@@ -181,26 +214,41 @@
 
         <div class="panel" id="policyPanel">
           <div class="panel-top">
-            <h2>Rules</h2>
+            <h2>
+              <svg class="panel-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+              Rules
+            </h2>
             <span class="chip" id="policyChip">Not locked</span>
           </div>
 
           <div class="workspace" aria-label="Payout type">
-            <button type="button" class="chip-btn active" data-scenario="fassets">Fee payouts</button>
-            <button type="button" class="chip-btn" data-scenario="bot">Team payroll</button>
-            <button type="button" class="chip-btn" data-scenario="ftso">Rewards</button>
+            <button type="button" class="chip-btn active" data-scenario="fassets">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h18M7 15h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Fee payouts
+            </button>
+            <button type="button" class="chip-btn" data-scenario="bot">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M19 8v4M21 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Team payroll
+            </button>
+            <button type="button" class="chip-btn" data-scenario="ftso">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 2.4 4.9L20 9l-4 3.9.9 5.6L12 16.2 7.1 18.5 8 12.9 4 9l5.6-1.1L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+              Rewards
+            </button>
           </div>
           <p class="scenario-hint" id="scenarioHint">
             Fee payouts: only approved fee wallets, under a hard limit.
           </p>
 
           <label>
-            Who can get paid
+            <span class="label-row">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Who can get paid
+            </span>
             <div class="field">
               <input id="allowlist" class="mono" type="text" spellcheck="false" autocomplete="off"
                 value="0x1111111111111111111111111111111111111111" />
-              <button type="button" class="field-btn" id="copyAllowlist" title="Copy" aria-label="Copy list">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="1.5"/></svg>
+              <button type="button" class="field-btn" id="copyAllowlist" title="Copy list" aria-label="Copy list">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
               </button>
             </div>
             <span class="hint">Replace sample payees with your team wallets. Up to 5, separated by commas.</span>
@@ -208,12 +256,18 @@
 
           <div class="row">
             <label>
-              Spending limit
+              <span class="label-row">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M8 8h5.5a2.5 2.5 0 0 1 0 5H8h6.5a2.5 2.5 0 0 1 0 5H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Spending limit
+              </span>
               <input id="maxAmount" class="mono" type="text" inputmode="numeric" value="1000000" />
               <span class="hint" id="maxHint">1,000,000</span>
             </label>
             <label>
-              Rules end
+              <span class="label-row">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v4l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Rules end
+              </span>
               <input id="expiresAt" class="mono" type="text" inputmode="numeric" value="0" />
               <span class="hint">0 = never end</span>
             </label>
@@ -225,7 +279,10 @@
             <button type="button" class="preset" data-expire="86400">24 hours</button>
           </div>
 
-          <button type="button" id="setPolicy" class="btn">Lock rules</button>
+          <button type="button" id="setPolicy" class="btn btn-icon">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M12 15v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Lock rules
+          </button>
         </div>
       </section>
 
@@ -238,42 +295,66 @@
 
         <div class="panel" id="requestPanel">
           <div class="panel-top">
-            <h2>Payment</h2>
+            <h2>
+              <svg class="panel-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Payment
+            </h2>
             <span class="chip" id="signChip">Waiting</span>
           </div>
 
           <label>
-            Pay to
+            <span class="label-row">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="m18 9 1.5 1.5L22 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Pay to
+            </span>
             <div class="field">
               <input id="intentRecipient" class="mono" type="text" spellcheck="false" autocomplete="off"
                 value="0x1111111111111111111111111111111111111111" />
               <button type="button" class="field-btn" id="matchRecipient" title="Use first approved person" aria-label="Use first approved person">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7h7v7M17 17H10V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="m18 9 1.5 1.5L22 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>
           </label>
 
           <div class="row">
             <label>
-              Amount
+              <span class="label-row">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M8 8h5.5a2.5 2.5 0 0 1 0 5H8h6.5a2.5 2.5 0 0 1 0 5H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Amount
+              </span>
               <input id="intentAmount" class="mono" type="text" inputmode="numeric" value="500000" />
               <span class="hint" id="amountHint">500,000</span>
             </label>
             <label>
-              Must finish by
+              <span class="label-row">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v4l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Must finish by
+              </span>
               <input id="intentDeadline" class="mono" type="text" inputmode="numeric" value="0" />
               <span class="hint">0 = no deadline</span>
             </label>
           </div>
 
-          <button type="button" id="trySign" class="btn" disabled>Approve payout</button>
+          <button type="button" id="trySign" class="btn btn-icon" disabled>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 13 4 4L19 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Approve payout
+          </button>
 
           <details class="safety">
-            <summary>Advanced: test safety limits</summary>
+            <summary>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 8.5 4.3-1.1 7.5-4 7.5-8.5V6L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 9v4M12 16.5h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Advanced: test safety limits
+            </summary>
             <p>Optional. Prove the vault refuses bad payments.</p>
             <div class="actions">
-              <button type="button" id="tryBad" class="btn quiet" disabled>Pay over the limit</button>
-              <button type="button" id="tryWrong" class="btn quiet" disabled>Pay the wrong person</button>
+              <button type="button" id="tryBad" class="btn quiet btn-icon" disabled>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5M12 16.5h.01M10.3 4.8 2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.8a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                Pay over the limit
+              </button>
+              <button type="button" id="tryWrong" class="btn quiet btn-icon" disabled>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="m18 8 4 4M22 8l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Pay the wrong person
+              </button>
             </div>
           </details>
         </div>
@@ -287,19 +368,30 @@
         </div>
         <div class="panel activity-panel">
           <ul class="activity-list" id="activityList">
-            <li class="activity-empty">No activity yet. Lock rules, then send a payout.</li>
+            <li class="activity-empty">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>
+              No activity yet. Lock rules, then send a payout.
+            </li>
           </ul>
         </div>
       </section>
 
       <div class="status" id="status" data-kind="idle" hidden>
-        <div class="status-mark" aria-hidden="true"></div>
-        <div>
+        <div class="status-mark" aria-hidden="true">
+          <svg class="status-ico idle" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v4l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <svg class="status-ico ok" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/><path d="m8.5 12.5 2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="status-ico bad" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/><path d="m9.5 9.5 5 5M14.5 9.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="status-copy">
           <strong id="statusTitle">Ready</strong>
           <span id="statusBody">Start for your team to begin.</span>
+          <details class="status-details" id="statusDetails" hidden>
+            <summary>Technical details</summary>
+            <code id="statusTech"></code>
+          </details>
         </div>
         <button type="button" class="field-btn ghost" id="copySig" hidden title="Copy proof" aria-label="Copy proof">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="1.5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
       </div>
     </main>

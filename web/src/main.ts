@@ -85,6 +85,8 @@ const teamChip = document.querySelector<HTMLElement>("#teamChip")!;
 const activityList = document.querySelector<HTMLElement>("#activityList")!;
 const workspaceModal = document.querySelector<HTMLElement>("#workspaceModal")!;
 const teamNameInput = document.querySelector<HTMLInputElement>("#teamName")!;
+const statusDetails = document.querySelector<HTMLDetailsElement>("#statusDetails")!;
+const statusTech = document.querySelector<HTMLElement>("#statusTech")!;
 const live = liveConfig();
 
 function toast(message: string) {
@@ -129,13 +131,63 @@ function saveWorkspace(ws: Workspace) {
   }
 }
 
-function setStatus(kind: "idle" | "ok" | "bad", title: string, body: string) {
+function humanizeError(err: unknown): {
+  title: string;
+  body: string;
+  tech?: string;
+} {
+  const tech = err instanceof Error ? err.message : String(err);
+  const lower = tech.toLowerCase();
+  if (
+    lower.includes("dns_hostname_not_found") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror") ||
+    lower.includes("non-json") ||
+    /\b502\b/.test(lower) ||
+    /\b503\b/.test(lower) ||
+    /\b504\b/.test(lower)
+  ) {
+    return {
+      title: "Vault unreachable",
+      body: "The secure vault is offline right now. Your rules stay in this browser — try again once the vault is back.",
+      tech,
+    };
+  }
+  if (lower.includes("timeout") || lower.includes("timed out")) {
+    return {
+      title: "Vault timed out",
+      body: "The vault took too long to respond. Check your connection and try again.",
+      tech,
+    };
+  }
+  return {
+    title: "Something went wrong",
+    body: "We could not complete that request. See technical details if you need to debug.",
+    tech,
+  };
+}
+
+function setStatus(
+  kind: "idle" | "ok" | "bad",
+  title: string,
+  body: string,
+  tech?: string
+) {
   const hide = currentView === "landing";
   statusEl.hidden = hide;
   if (hide) return;
   statusEl.dataset.kind = kind;
   statusTitle.textContent = title;
   statusBody.textContent = body;
+  if (tech) {
+    statusDetails.hidden = false;
+    statusDetails.open = false;
+    statusTech.textContent = tech;
+  } else {
+    statusDetails.hidden = true;
+    statusDetails.open = false;
+    statusTech.textContent = "";
+  }
   copySigBtn.hidden = !(kind === "ok" && lastSig);
   statusEl.classList.remove("is-updating");
   void statusEl.offsetWidth;
@@ -500,8 +552,9 @@ setPolicyBtn.addEventListener("click", async () => {
     toast("Rules locked");
     showView("send");
   } catch (e) {
-    setStatus("bad", "Something went wrong", String(e));
-    addActivity("bad", "Lock error", String(e));
+    const msg = humanizeError(e);
+    setStatus("bad", msg.title, msg.body, msg.tech);
+    addActivity("bad", msg.title, msg.body);
   } finally {
     setPolicyBtn.classList.remove("busy");
     setPolicyBtn.disabled = false;
@@ -608,8 +661,9 @@ trySignBtn.addEventListener("click", async () => {
     lastSig = "";
     signChip.textContent = "Error";
     signChip.className = "chip bad";
-    setStatus("bad", "Something went wrong", String(e));
-    addActivity("bad", "Send error", String(e));
+    const msg = humanizeError(e);
+    setStatus("bad", msg.title, msg.body, msg.tech);
+    addActivity("bad", msg.title, msg.body);
   } finally {
     trySignBtn.classList.remove("busy");
     sync();
