@@ -21,7 +21,7 @@ const SCENARIOS: Record<
   }
 > = {
   fassets: {
-    hint: "FAssets executor fee vault — allowlisted fee recipient + hard cap.",
+    hint: "Fee payouts (FAssets): only approved fee wallets, under a hard limit.",
     allowlist: [
       "0x1111111111111111111111111111111111111111",
       "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -30,13 +30,13 @@ const SCENARIOS: Record<
     intentAmount: "500000",
   },
   bot: {
-    hint: "Flare keeper / bot payout — only the ops wallet can receive signed payouts.",
+    hint: "Bot payroll: automation can pay only the ops wallet you approve.",
     allowlist: ["0x2222222222222222222222222222222222222222"],
     maxAmount: "5000000",
     intentAmount: "2500000",
   },
   ftso: {
-    hint: "FTSO reward forwarder — provider rewards only to the locked payout address.",
+    hint: "Rewards (FTSO): provider rewards go only to the locked payout wallet.",
     allowlist: ["0x3333333333333333333333333333333333333333"],
     maxAmount: "250000",
     intentAmount: "100000",
@@ -44,11 +44,11 @@ const SCENARIOS: Record<
 };
 
 const ERRORS: Record<string, string> = {
-  "no private key stored": "No key loaded.",
-  "policy expired": "Policy expired.",
-  "intent deadline passed": "Deadline passed.",
-  "recipient not allowed by policy": "Recipient not allowlisted.",
-  "amount exceeds policy maxAmount": "Amount exceeds max.",
+  "no private key stored": "Vault key is not loaded yet.",
+  "policy expired": "These payout rules have ended.",
+  "intent deadline passed": "This payout took too long and timed out.",
+  "recipient not allowed by policy": "That person is not on the approved list.",
+  "amount exceeds policy maxAmount": "That amount is over the spending limit.",
 };
 
 const OUTSIDER = "0x9999999999999999999999999999999999999999" as const;
@@ -225,13 +225,13 @@ function applyScenario(id: string) {
   document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
   policy = null;
   lastSig = "";
-  policyChip.textContent = "Unlocked";
+  policyChip.textContent = "Not locked";
   policyChip.className = "chip";
   signChip.textContent = "Waiting";
   signChip.className = "chip";
   refreshHints();
   sync();
-  setStatus("idle", "Ready", "Lock a policy, then sign.");
+  setStatus("idle", "Ready", "Lock the rules, then try a payout.");
 }
 
 themeToggle.addEventListener("click", () => {
@@ -297,8 +297,8 @@ setPolicyBtn.addEventListener("click", async () => {
   if (!valid) {
     setStatus(
       "bad",
-      "Invalid allowlist",
-      "Enter 1–5 valid 0x addresses, comma-separated."
+      "Check the list",
+      "Add 1 to 5 valid wallet addresses, separated by commas."
     );
     return;
   }
@@ -315,7 +315,7 @@ setPolicyBtn.addEventListener("click", async () => {
         originalMessage: encodePolicy(next),
       });
       if (res.status !== 1) {
-        setStatus("bad", "Rejected", res.log ?? "Policy rejected.");
+        setStatus("bad", "Could not lock", res.log ?? "Rules were refused.");
         return;
       }
     }
@@ -328,12 +328,12 @@ setPolicyBtn.addEventListener("click", async () => {
     sync();
     setStatus(
       "ok",
-      "Policy locked",
-      `${next.allowedRecipients.length} addr · max ${next.maxAmount.toLocaleString("en-US")}`
+      "Rules locked",
+      `${next.allowedRecipients.length} approved · limit ${next.maxAmount.toLocaleString("en-US")}`
     );
-    toast("Policy locked");
+    toast("Rules locked");
   } catch (e) {
-    setStatus("bad", "Error", String(e));
+    setStatus("bad", "Something went wrong", String(e));
   } finally {
     setPolicyBtn.classList.remove("busy");
     setPolicyBtn.disabled = false;
@@ -343,7 +343,7 @@ setPolicyBtn.addEventListener("click", async () => {
 
 trySignBtn.addEventListener("click", async () => {
   if (!policy && !live) {
-    setStatus("bad", "No policy", "Lock a policy first.");
+    setStatus("bad", "Lock rules first", "Set who can get paid and the limit, then lock.");
     return;
   }
 
@@ -352,7 +352,7 @@ trySignBtn.addEventListener("click", async () => {
   const intent = readIntent();
   intentInput.classList.toggle("invalid", !isAddress(intent.recipient));
   if (!isAddress(intent.recipient)) {
-    setStatus("bad", "Invalid address", "Check the recipient field.");
+    setStatus("bad", "Check pay-to", "That wallet address does not look valid.");
     return;
   }
 
@@ -369,16 +369,25 @@ trySignBtn.addEventListener("click", async () => {
       });
       if (res.status !== 1) {
         lastSig = "";
-        signChip.textContent = "Rejected";
+        signChip.textContent = "Refused";
         signChip.className = "chip bad";
-        setStatus("bad", "Blocked", res.log ?? "Request rejected.");
+        const msg = (res.log ?? "").replace(/^error:\s*/i, "");
+        setStatus(
+          "bad",
+          "Payout blocked",
+          ERRORS[msg] ?? res.log ?? "This payout breaks the locked rules."
+        );
         return;
       }
       lastSig = res.data ?? "";
       signChip.textContent = "Approved";
       signChip.className = "chip ok";
-      setStatus("ok", "Signed", "TEE approved this request.");
-      toast("Signed");
+      setStatus(
+        "ok",
+        "Payout approved",
+        "Secure vault signed this. The rules were followed."
+      );
+      toast("Payout approved");
       return;
     }
 
@@ -386,9 +395,9 @@ trySignBtn.addEventListener("click", async () => {
     const err = check(policy, intent);
     if (err) {
       lastSig = "";
-      signChip.textContent = "Rejected";
+      signChip.textContent = "Refused";
       signChip.className = "chip bad";
-      setStatus("bad", "Blocked", ERRORS[err] ?? err);
+      setStatus("bad", "Payout blocked", ERRORS[err] ?? err);
       return;
     }
 
@@ -399,15 +408,15 @@ trySignBtn.addEventListener("click", async () => {
     signChip.className = "chip ok";
     setStatus(
       "ok",
-      "Signed",
-      `${intent.amount.toLocaleString("en-US")} → ${short(intent.recipient)}`
+      "Payout approved",
+      `${intent.amount.toLocaleString("en-US")} to ${short(intent.recipient)}`
     );
-    toast("Signed");
+    toast("Payout approved");
   } catch (e) {
     lastSig = "";
     signChip.textContent = "Error";
     signChip.className = "chip bad";
-    setStatus("bad", "Error", String(e));
+    setStatus("bad", "Something went wrong", String(e));
   } finally {
     trySignBtn.classList.remove("busy");
     sync();
@@ -437,18 +446,18 @@ sync();
 
 if (live) {
   modeBadge.dataset.mode = "live";
-  modeBadge.textContent = "Live TEE";
+  modeBadge.textContent = "Live vault";
   setStatus(
     "idle",
-    "Live Coston2 TEE",
-    "Connected to FCC /direct. Lock policy, then sign."
+    "Live secure vault",
+    "Connected on Flare. Lock the rules, then try a payout."
   );
 } else {
   modeBadge.dataset.mode = "preview";
-  modeBadge.textContent = "Preview";
+  modeBadge.textContent = "Demo";
   setStatus(
     "idle",
-    "Policy preview",
-    "Same enclave rules (allowlist + cap + expiry). Live Coston2 TEE when VITE_DIRECT_* is set."
+    "Demo mode",
+    "Same rules as the live vault. Lock who can get paid, set a limit, then try Approve or a break attempt."
   );
 }

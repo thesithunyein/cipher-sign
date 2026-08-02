@@ -793,10 +793,15 @@ footer a:hover {
     grid-template-columns: 1fr;
   }
 
-  .actions {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
+.actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+}
+
+.actions .btn {
+  white-space: nowrap;
+}
 
   .btn {
     width: 100%;
