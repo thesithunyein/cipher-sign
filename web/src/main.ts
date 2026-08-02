@@ -1,6 +1,12 @@
 import "./style.css";
-import { getAddress, keccak256, toBytes, type Hex } from "viem";
-import type { Address, WalletClient } from "viem";
+import {
+  getAddress,
+  keccak256,
+  toBytes,
+  type Address,
+  type Hex,
+  type WalletClient,
+} from "viem";
 import {
   encodeIntent,
   encodePolicy,
@@ -13,8 +19,6 @@ import {
 import {
   chainConfig,
   classifyAttestation,
-  connectWallet,
-  hasWallet,
   sendSetPolicyOnchain,
   sendSignOnchain,
   type TeeAttestationKind,
@@ -91,7 +95,6 @@ let lastTxHash: Hex | null = null;
 let lastExplorerTx = "";
 let vaultAddress: `0x${string}` | null = null;
 let attestationKind: TeeAttestationKind = "unknown";
-let walletAddress: `0x${string}` | null = null;
 let walletClient: WalletClient | null = null;
 let walletAccount: Address | null = null;
 let proofBlobUrl = "";
@@ -135,15 +138,9 @@ const teamNameInput = document.querySelector<HTMLInputElement>("#teamName")!;
 const vaultAction = document.querySelector<HTMLButtonElement>("#vaultAction")!;
 const liveCfg = liveConfig();
 
-/** App only after wallet + live vault (on-chain InstructionSender path). */
+/** App after live vault connect. On-chain Lock/Approve is gas-sponsored (you pay $0). */
 function isAuthed(): boolean {
-  return (
-    vaultState === "live" &&
-    Boolean(liveCfg) &&
-    Boolean(chainCfg) &&
-    Boolean(walletAddress) &&
-    Boolean(walletClient)
-  );
+  return vaultState === "live" && Boolean(liveCfg) && Boolean(chainCfg);
 }
 
 function refreshSessionChrome() {
@@ -153,25 +150,19 @@ function refreshSessionChrome() {
   if (authed && workspace) teamChip.textContent = workspace.team;
 
   vaultAction.hidden = false;
-  vaultAction.disabled =
-    vaultState === "checking" || !liveCfg || !chainCfg || !hasWallet();
+  vaultAction.disabled = vaultState === "checking" || !liveCfg || !chainCfg;
   if (!liveCfg || !chainCfg) {
     vaultAction.textContent = "Unavailable";
     vaultAction.title = "Vault or InstructionSender is not configured";
-  } else if (!hasWallet()) {
-    vaultAction.textContent = "Install wallet";
-    vaultAction.title = "MetaMask (or Coston2 wallet) required";
   } else if (vaultState === "checking") {
     vaultAction.textContent = "Connecting…";
-    vaultAction.title = "Connecting wallet + vault";
+    vaultAction.title = "Connecting vault";
   } else if (authed) {
     vaultAction.textContent = "Disconnect";
-    vaultAction.title = walletAddress
-      ? `Disconnect ${short(walletAddress)}`
-      : "Disconnect";
+    vaultAction.title = "Disconnect vault";
   } else {
-    vaultAction.textContent = "Connect wallet";
-    vaultAction.title = "Connect wallet on Coston2";
+    vaultAction.textContent = "Connect";
+    vaultAction.title = "Connect CipherSign vault";
   }
 }
 
@@ -187,44 +178,22 @@ async function connectVault(opts?: { quiet?: boolean }) {
     if (!opts?.quiet) toast("Vault / InstructionSender not configured");
     return false;
   }
-  if (!hasWallet()) {
-    if (!opts?.quiet) toast("Install MetaMask first");
-    return false;
-  }
 
   localStorage.setItem(VAULT_PREF_KEY, "live");
   vaultState = "checking";
   refreshVaultUi();
 
-  try {
-    const wallet = await connectWallet();
-    walletAddress = wallet.address;
-    walletClient = wallet.walletClient;
-    walletAccount = wallet.account;
-  } catch (e) {
-    localStorage.removeItem(VAULT_PREF_KEY);
-    vaultState = "unreachable";
-    walletAddress = null;
-    walletClient = null;
-    walletAccount = null;
-    refreshVaultUi();
-    if (!opts?.quiet) {
-      toast(e instanceof Error ? e.message : "Wallet connect failed");
-    }
-    showView("landing");
-    return false;
-  }
+  // MetaMask not required — Lock/Approve gas is operator-sponsored.
+  walletClient = null;
+  walletAccount = null;
 
   const probe = await probeVault(liveCfg.baseUrl);
   if (!probe.ok) {
     localStorage.removeItem(VAULT_PREF_KEY);
     vaultState = "unreachable";
     vaultAddress = null;
-    walletAddress = null;
-    walletClient = null;
-    walletAccount = null;
     refreshVaultUi();
-    if (!opts?.quiet) toast("Wallet ok — TEE vault offline");
+    if (!opts?.quiet) toast("Could not connect — vault offline");
     showView("landing");
     return false;
   }
@@ -234,13 +203,13 @@ async function connectVault(opts?: { quiet?: boolean }) {
   vaultState = "live";
   refreshVaultUi();
   if (!opts?.quiet) {
-    const teeLabel =
+    const tee =
       attestationKind === "hardware"
         ? "hardware TEE"
         : attestationKind === "simulated"
-          ? "simulated TEE (not production hardware)"
+          ? "simulated TEE"
           : "TEE";
-    toast(`Connected · ${short(walletAddress!)} · ${teeLabel}`);
+    toast(`Connected · ${tee} · gas sponsored ($0 for you)`);
   }
 
   if (!workspace) {
@@ -257,7 +226,6 @@ function disconnectVault(opts?: { quiet?: boolean }) {
   policy = null;
   vaultAddress = null;
   attestationKind = "unknown";
-  walletAddress = null;
   walletClient = null;
   walletAccount = null;
   lastSig = "";
@@ -375,8 +343,15 @@ function humanizeError(err: unknown): {
   }
   if (lower.includes("insufficient funds")) {
     return {
-      title: "Need C2FLR",
-      body: "Fund your wallet on Coston2 for gas + InstructionSender fee.",
+      title: "Sponsor needs C2FLR",
+      body: "Operator gas wallet is empty. Free testnet C2FLR: https://faucet.flare.network/ (not real money).",
+      tech,
+    };
+  }
+  if (lower.includes("sponsor key not configured")) {
+    return {
+      title: "Sponsor offline",
+      body: "Set SPONSOR_PRIVATE_KEY on the host (funded Coston2 key). You should not pay gas in the product path.",
       tech,
     };
   }
@@ -957,8 +932,8 @@ document.querySelector("#allowlist")!.addEventListener("input", refreshDashboard
 
 setPolicyBtn.addEventListener("click", async () => {
   if (policyLocking) return;
-  if (!isAuthed() || !liveCfg || !walletClient || !walletAccount) {
-    toast("Connect wallet first");
+  if (!isAuthed() || !liveCfg) {
+    toast("Connect first");
     showView("landing");
     return;
   }
@@ -989,14 +964,14 @@ setPolicyBtn.addEventListener("click", async () => {
   sync();
   setStatus(
     "ok",
-    "Confirm in wallet",
-    "If MetaMask shows a red fee / Review alert on activate, that is the one-time registry scan (~4 C2FLR). Review alert → Confirm. Then confirm setPolicy."
+    "Submitting on-chain",
+    "InstructionSender.setPolicy — gas sponsored (you pay $0)…"
   );
   try {
     const onchain = await sendSetPolicyOnchain({
+      policyBytes: encodePolicy(next),
       walletClient,
       account: walletAccount,
-      policyBytes: encodePolicy(next),
     });
     setStatus(
       "ok",
@@ -1038,8 +1013,8 @@ setPolicyBtn.addEventListener("click", async () => {
 });
 
 trySignBtn.addEventListener("click", async () => {
-  if (!isAuthed() || !liveCfg || !walletClient || !walletAccount) {
-    toast("Connect wallet first");
+  if (!isAuthed() || !liveCfg) {
+    toast("Connect first");
     showView("landing");
     return;
   }
@@ -1067,11 +1042,15 @@ trySignBtn.addEventListener("click", async () => {
     if (probe.vaultAddress) vaultAddress = probe.vaultAddress;
     attestationKind = classifyAttestation(probe.info);
 
-    setStatus("ok", "Confirm in wallet", "sign on InstructionSender (Coston2)…");
+    setStatus(
+      "ok",
+      "Submitting on-chain",
+      "InstructionSender.sign — gas sponsored (you pay $0)…"
+    );
     const onchain = await sendSignOnchain({
+      intentBytes: encodeIntent(intent),
       walletClient,
       account: walletAccount,
-      intentBytes: encodeIntent(intent),
     });
     setStatus(
       "ok",

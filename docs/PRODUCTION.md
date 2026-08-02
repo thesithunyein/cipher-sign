@@ -4,9 +4,10 @@
 
 Lock rules and Approve payout **must** go through the on-chain contract:
 
-`wallet → InstructionSender.setPolicy / .sign (Coston2) → TeeExtensionRegistry → CipherSign TEE → GET /action/result/:instructionId`
+`/api/instruct (sponsor key pays gas) → InstructionSender.setPolicy / .sign (Coston2) → TeeExtensionRegistry → CipherSign TEE → GET /action/result/:instructionId`
 
 The app shows a **Coston2 explorer transaction** for every Lock / Approve.  
+**Users pay $0 network fees** — set `SPONSOR_PRIVATE_KEY` (funded Coston2 key) on Vercel / local `tee/.env` as `PRIVATE_KEY`.  
 `POST /direct` is **not** the product path (kept only for operator smoke scripts).
 
 ## Simulated vs hardware TEE

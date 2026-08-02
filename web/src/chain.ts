@@ -358,82 +358,122 @@ async function finishExtensionId(
   };
 }
 
-export async function sendSetPolicyOnchain(opts: {
-  walletClient: WalletClient;
-  account: Address;
-  policyBytes: Hex;
+/** Operator-sponsored on-chain InstructionSender — user pays $0 gas. */
+export async function sendSponsoredInstruction(opts: {
+  op: "setPolicy" | "sign";
+  message: Hex;
 }): Promise<OnchainInstructionResult> {
-  const cfg = chainConfig();
-  if (!cfg) throw new Error("Chain config missing");
-  const publicClient = publicClientFrom(cfg);
-
-  await ensureExtensionIdOnchain({
-    walletClient: opts.walletClient,
-    account: opts.account,
+  const res = await fetch("/api/instruct", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ op: opts.op, message: opts.message }),
   });
-
-  const hash = await opts.walletClient.writeContract({
-    chain: coston2,
-    account: opts.account,
-    address: cfg.instructionSender,
-    abi: instructionSenderAbi,
-    functionName: "setPolicy",
-    args: [opts.policyBytes],
-    value: cfg.feeWei,
-  });
-
-  const receipt = await publicClient.waitForTransactionReceipt({ hash });
-  if (receipt.status !== "success") {
-    throw new Error("setPolicy transaction reverted on Coston2");
+  const body = (await res.json().catch(() => ({}))) as {
+    error?: string;
+    txHash?: Hex;
+    instructionId?: Hex;
+    explorerTx?: string;
+  };
+  if (!res.ok) {
+    throw new Error(body.error || `Sponsor API HTTP ${res.status}`);
   }
-  const instructionId = instructionIdFromReceipt(receipt);
-  if (!instructionId) {
-    throw new Error("Could not read instruction ID from transaction logs");
+  if (!body.txHash || !body.instructionId || !body.explorerTx) {
+    throw new Error("Sponsor API returned an incomplete result");
   }
   return {
-    txHash: hash,
-    instructionId,
-    explorerTx: explorerTxUrl(cfg.explorerUrl, hash),
+    txHash: body.txHash,
+    instructionId: body.instructionId,
+    explorerTx: body.explorerTx,
   };
 }
 
-export async function sendSignOnchain(opts: {
-  walletClient: WalletClient;
-  account: Address;
-  intentBytes: Hex;
+export async function sendSetPolicyOnchain(opts: {
+  policyBytes: Hex;
+  walletClient?: WalletClient | null;
+  account?: Address | null;
 }): Promise<OnchainInstructionResult> {
-  const cfg = chainConfig();
-  if (!cfg) throw new Error("Chain config missing");
-  const publicClient = publicClientFrom(cfg);
-
-  await ensureExtensionIdOnchain({
-    walletClient: opts.walletClient,
-    account: opts.account,
-  });
-
-  const hash = await opts.walletClient.writeContract({
-    chain: coston2,
-    account: opts.account,
-    address: cfg.instructionSender,
-    abi: instructionSenderAbi,
-    functionName: "sign",
-    args: [opts.intentBytes],
-    value: cfg.feeWei,
-  });
-
-  const receipt = await publicClient.waitForTransactionReceipt({ hash });
-  if (receipt.status !== "success") {
-    throw new Error("sign transaction reverted on Coston2");
+  try {
+    return await sendSponsoredInstruction({
+      op: "setPolicy",
+      message: opts.policyBytes,
+    });
+  } catch (sponsoredErr) {
+    if (!opts.walletClient || !opts.account) throw sponsoredErr;
+    // Fallback: user wallet pays (needs C2FLR from faucet).
+    const cfg = chainConfig();
+    if (!cfg) throw sponsoredErr;
+    const publicClient = publicClientFrom(cfg);
+    await ensureExtensionIdOnchain({
+      walletClient: opts.walletClient,
+      account: opts.account,
+    });
+    const hash = await opts.walletClient.writeContract({
+      chain: coston2,
+      account: opts.account,
+      address: cfg.instructionSender,
+      abi: instructionSenderAbi,
+      functionName: "setPolicy",
+      args: [opts.policyBytes],
+      value: cfg.feeWei,
+    });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (receipt.status !== "success") {
+      throw new Error("setPolicy transaction reverted on Coston2");
+    }
+    const instructionId = instructionIdFromReceipt(receipt);
+    if (!instructionId) {
+      throw new Error("Could not read instruction ID from transaction logs");
+    }
+    return {
+      txHash: hash,
+      instructionId,
+      explorerTx: explorerTxUrl(cfg.explorerUrl, hash),
+    };
   }
-  const instructionId = instructionIdFromReceipt(receipt);
-  if (!instructionId) {
-    throw new Error("Could not read instruction ID from transaction logs");
+}
+
+export async function sendSignOnchain(opts: {
+  intentBytes: Hex;
+  walletClient?: WalletClient | null;
+  account?: Address | null;
+}): Promise<OnchainInstructionResult> {
+  try {
+    return await sendSponsoredInstruction({
+      op: "sign",
+      message: opts.intentBytes,
+    });
+  } catch (sponsoredErr) {
+    if (!opts.walletClient || !opts.account) throw sponsoredErr;
+    const cfg = chainConfig();
+    if (!cfg) throw sponsoredErr;
+    const publicClient = publicClientFrom(cfg);
+    await ensureExtensionIdOnchain({
+      walletClient: opts.walletClient,
+      account: opts.account,
+    });
+    const hash = await opts.walletClient.writeContract({
+      chain: coston2,
+      account: opts.account,
+      address: cfg.instructionSender,
+      abi: instructionSenderAbi,
+      functionName: "sign",
+      args: [opts.intentBytes],
+      value: cfg.feeWei,
+    });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (receipt.status !== "success") {
+      throw new Error("sign transaction reverted on Coston2");
+    }
+    const instructionId = instructionIdFromReceipt(receipt);
+    if (!instructionId) {
+      throw new Error("Could not read instruction ID from transaction logs");
+    }
+    return {
+      txHash: hash,
+      instructionId,
+      explorerTx: explorerTxUrl(cfg.explorerUrl, hash),
+    };
   }
-  return {
-    txHash: hash,
-    instructionId,
-    explorerTx: explorerTxUrl(cfg.explorerUrl, hash),
-  };
 }
 
 export type TeeAttestationKind = "hardware" | "simulated" | "unknown";

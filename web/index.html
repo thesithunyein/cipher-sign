@@ -75,10 +75,10 @@
             <strong>spending limit</strong>. Wrong person or overpay gets blocked.
           </p>
           <div class="cta-row">
-            <button type="button" class="btn" id="startTeam">Connect wallet</button>
+            <button type="button" class="btn" id="startTeam">Connect</button>
             <a class="btn quiet" href="#faq">Q&amp;A</a>
           </div>
-          <p class="trust-line">Coston2 InstructionSender · wallet required</p>
+          <p class="trust-line">Coston2 on-chain · gas sponsored for you</p>
         </div>
 
         <div class="glance reveal" style="--d: 2" id="how" aria-label="How CipherSign works">
@@ -110,8 +110,15 @@
             <details class="faq-item">
               <summary>What does Connect do?</summary>
               <p>
-                Connects your wallet on Flare Coston2 and checks the CipherSign TEE.
-                Lock and Approve submit real InstructionSender transactions on-chain.
+                Opens your CipherSign vault. Lock and Approve still go on-chain via
+                InstructionSender — network gas is paid by the operator sponsor, not you.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>Do I pay network fees?</summary>
+              <p>
+                No — the product path sponsors Coston2 gas. You should not need MetaMask
+                C2FLR for Lock / Approve. (C2FLR itself is free testnet from the Flare faucet.)
               </p>
             </details>
             <details class="faq-item">
