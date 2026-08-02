@@ -58,6 +58,20 @@ export const instructionSenderAbi = [
   },
   {
     type: "function",
+    name: "setExtensionId",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "id", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "discoverExtensionId",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
     name: "_extensionId",
     stateMutability: "view",
     inputs: [],
@@ -222,9 +236,21 @@ export type OnchainInstructionResult = {
   explorerTx: string;
 };
 
+function configuredExtensionId(): bigint | null {
+  const raw = env().VITE_EXTENSION_ID;
+  if (!raw) return null;
+  try {
+    const id = BigInt(raw);
+    return id > 0n ? id : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * One-time on-chain bind: InstructionSender discovers its Flare extension id.
- * Safe to call repeatedly — no-op when already set.
+ * One-time on-chain bind: InstructionSender → Flare extension id.
+ * Prefers cheap setExtensionId(id) when VITE_EXTENSION_ID is set (new contracts).
+ * Falls back to registry scan (can cost several C2FLR on busy Coston2).
  */
 export async function ensureExtensionIdOnchain(opts: {
   walletClient: WalletClient;
@@ -243,33 +269,58 @@ export async function ensureExtensionIdOnchain(opts: {
     return { alreadySet: true };
   }
 
+  const knownId = configuredExtensionId();
+  const balance = await publicClient.getBalance({ address: opts.account });
+
   try {
-    const hash = await opts.walletClient.writeContract({
-      chain: coston2,
+    if (knownId != null) {
+      try {
+        const hash = await opts.walletClient.writeContract({
+          chain: coston2,
+          account: opts.account,
+          address: cfg.instructionSender,
+          abi: instructionSenderAbi,
+          functionName: "setExtensionId",
+          args: [knownId],
+        });
+        return finishExtensionId(publicClient, cfg, hash);
+      } catch {
+        /* old deployed bytecode has no uint256 overload — fall through */
+      }
+    }
+
+    // Preflight cost of registry scan (old InstructionSender.setExtensionId()).
+    const { request } = await publicClient.simulateContract({
       account: opts.account,
       address: cfg.instructionSender,
       abi: instructionSenderAbi,
       functionName: "setExtensionId",
+      args: [],
     });
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    if (receipt.status !== "success") {
-      throw new Error("setExtensionId transaction reverted on Coston2");
-    }
-    const after = await publicClient.readContract({
+    const gas = await publicClient.estimateContractGas({
+      account: opts.account,
       address: cfg.instructionSender,
       abi: instructionSenderAbi,
-      functionName: "_extensionId",
+      functionName: "setExtensionId",
+      args: [],
     });
-    if (after === 0n) {
+    const gasPrice = await publicClient.getGasPrice();
+    const cost = gas * gasPrice;
+    if (balance < cost) {
+      const need = (Number(cost) / 1e18).toFixed(3);
+      const have = (Number(balance) / 1e18).toFixed(3);
       throw new Error(
-        "setExtensionId mined but extension id is still 0 — contract may not be registered as this extension’s InstructionSender."
+        `Activate needs ~${need} C2FLR for the one-time registry scan, but this wallet only has ${have} C2FLR. Fund from https://faucet.flare.network/ then retry — or run: node web/scripts/set-extension-id.mjs`
       );
     }
-    return {
-      alreadySet: false,
-      txHash: hash,
-      explorerTx: explorerTxUrl(cfg.explorerUrl, hash),
-    };
+
+    // Human-readable cost warning (MetaMask may show red “high fee” — that is expected).
+    console.info(
+      `[CipherSign] setExtensionId scan ≈ ${(Number(cost) / 1e18).toFixed(3)} C2FLR — confirm in MetaMask even if fee is red`
+    );
+
+    const hash = await opts.walletClient.writeContract(request);
+    return finishExtensionId(publicClient, cfg, hash);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.toLowerCase().includes("extension id not found")) {
@@ -279,6 +330,32 @@ export async function ensureExtensionIdOnchain(opts: {
     }
     throw e;
   }
+}
+
+async function finishExtensionId(
+  publicClient: ReturnType<typeof publicClientFrom>,
+  cfg: ChainConfig,
+  hash: Hex
+): Promise<{ alreadySet: boolean; txHash: Hex; explorerTx: string }> {
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") {
+    throw new Error("setExtensionId transaction reverted on Coston2");
+  }
+  const after = await publicClient.readContract({
+    address: cfg.instructionSender,
+    abi: instructionSenderAbi,
+    functionName: "_extensionId",
+  });
+  if (after === 0n) {
+    throw new Error(
+      "setExtensionId mined but extension id is still 0 — contract may not be registered as this extension’s InstructionSender."
+    );
+  }
+  return {
+    alreadySet: false,
+    txHash: hash,
+    explorerTx: explorerTxUrl(cfg.explorerUrl, hash),
+  };
 }
 
 export async function sendSetPolicyOnchain(opts: {

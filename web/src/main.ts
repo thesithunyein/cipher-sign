@@ -990,7 +990,7 @@ setPolicyBtn.addEventListener("click", async () => {
   setStatus(
     "ok",
     "Confirm in wallet",
-    "First-time activate (setExtensionId) if needed, then setPolicy on Coston2…"
+    "If MetaMask shows a red fee / Review alert on activate, that is the one-time registry scan (~4 C2FLR). Review alert → Confirm. Then confirm setPolicy."
   );
   try {
     const onchain = await sendSetPolicyOnchain({

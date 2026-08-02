@@ -20,8 +20,21 @@ contract InstructionSender {
         teeMachineRegistry = ITeeMachineRegistry(_teeMachineRegistry);
     }
 
-    /// @notice Discover and store this contract's extension ID.
-    function setExtensionId() external {
+    /// @notice Bind this sender to a known extension id (cheap — one registry read).
+    /// @dev Prefer this over the scan helper once EXTENSION_ID is known from pre-build.
+    function setExtensionId(uint256 id) external {
+        require(_extensionId == 0, "extension ID already set");
+        require(id != 0, "bad id");
+        require(
+            teeExtensionRegistry.getTeeExtensionInstructionsSender(id) ==
+                address(this),
+            "extension ID not found"
+        );
+        _extensionId = id;
+    }
+
+    /// @notice Discover extension ID by scanning the registry (expensive on busy networks).
+    function discoverExtensionId() external {
         require(_extensionId == 0, "extension ID already set");
 
         uint256 count = teeExtensionRegistry.extensionsCounter();

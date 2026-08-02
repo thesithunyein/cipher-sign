@@ -1207,6 +1207,17 @@ input.invalid {
   border-color: color-mix(in srgb, var(--bad) 55%, transparent);
 }
 
+/* Stop browser autofill from painting fake “error” red/yellow underlines */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  box-shadow: 0 0 0 1000px var(--elevated) inset;
+  border: 1px solid var(--line);
+  transition: background-color 99999s ease-in-out 0s;
+}
+
 .field-btn {
   width: 2.55rem;
   height: 2.55rem;
