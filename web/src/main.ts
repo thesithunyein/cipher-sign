@@ -10,6 +10,7 @@ import {
 } from "./fcc";
 
 type Policy = SignPolicy;
+type ViewId = "home" | "rules" | "send" | "activity";
 
 const SCENARIOS: Record<
   string,
@@ -21,7 +22,7 @@ const SCENARIOS: Record<
   }
 > = {
   fassets: {
-    hint: "Fee payouts (FAssets): only approved fee wallets, under a hard limit.",
+    hint: "Fee payouts: only approved fee wallets, under a hard limit.",
     allowlist: [
       "0x1111111111111111111111111111111111111111",
       "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -36,7 +37,7 @@ const SCENARIOS: Record<
     intentAmount: "2500000",
   },
   ftso: {
-    hint: "Rewards (FTSO): provider rewards go only to the locked payout wallet.",
+    hint: "Rewards: partner rewards go only to the locked payout wallet.",
     allowlist: ["0x3333333333333333333333333333333333333333"],
     maxAmount: "250000",
     intentAmount: "100000",
@@ -56,6 +57,7 @@ const OUTSIDER = "0x9999999999999999999999999999999999999999" as const;
 let policy: Policy | null = null;
 let lastSig = "";
 let toastTimer = 0;
+let currentView: ViewId = "home";
 
 const policyChip = document.querySelector<HTMLElement>("#policyChip")!;
 const signChip = document.querySelector<HTMLElement>("#signChip")!;
@@ -73,6 +75,8 @@ const maxHint = document.querySelector<HTMLElement>("#maxHint")!;
 const amountHint = document.querySelector<HTMLElement>("#amountHint")!;
 const scenarioHint = document.querySelector<HTMLElement>("#scenarioHint")!;
 const modeBadge = document.querySelector<HTMLElement>("#modeBadge")!;
+const appNav = document.querySelector<HTMLElement>("#appNav")!;
+const activityList = document.querySelector<HTMLElement>("#activityList")!;
 const live = liveConfig();
 
 function toast(message: string) {
@@ -95,6 +99,7 @@ function currentTheme(): "light" | "dark" {
 }
 
 function setStatus(kind: "idle" | "ok" | "bad", title: string, body: string) {
+  statusEl.hidden = currentView === "home";
   statusEl.dataset.kind = kind;
   statusTitle.textContent = title;
   statusBody.textContent = body;
@@ -102,6 +107,15 @@ function setStatus(kind: "idle" | "ok" | "bad", title: string, body: string) {
   statusEl.classList.remove("is-updating");
   void statusEl.offsetWidth;
   statusEl.classList.add("is-updating");
+}
+
+function addActivity(kind: "ok" | "bad" | "idle", title: string, body: string) {
+  const empty = activityList.querySelector(".activity-empty");
+  if (empty) empty.remove();
+  const li = document.createElement("li");
+  li.dataset.kind = kind;
+  li.innerHTML = `<strong>${title}</strong><span>${body}</span><time>${new Date().toLocaleTimeString()}</time>`;
+  activityList.prepend(li);
 }
 
 function sync() {
@@ -115,7 +129,7 @@ function fmt(raw: string) {
   try {
     return BigInt(raw || "0").toLocaleString("en-US");
   } catch {
-    return "—";
+    return "-";
   }
 }
 
@@ -201,6 +215,28 @@ function fakeSig(intentHex: Hex) {
   return keccak256(toBytes(`sig:${intentHex}`));
 }
 
+function showView(id: ViewId) {
+  currentView = id;
+  document.querySelectorAll<HTMLElement>(".view").forEach((el) => {
+    el.hidden = el.id !== `view-${id}`;
+  });
+  document.querySelectorAll<HTMLElement>("[data-nav]").forEach((el) => {
+    if (el instanceof HTMLButtonElement || el.classList.contains("app-nav-item")) {
+      el.classList.toggle("active", el.dataset.nav === id);
+    }
+  });
+  appNav.hidden = false;
+  statusEl.hidden = id === "home";
+  if (id === "home") {
+    // keep landing clean
+  } else if (id === "rules" && !policy) {
+    setStatus("idle", "Set your rules", "Choose who can get paid and the spending limit, then lock.");
+  } else if (id === "send" && !policy && !live) {
+    setStatus("idle", "Lock rules first", "Go to Rules, lock them, then come back to send.");
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function applyScenario(id: string) {
   const s = SCENARIOS[id];
   if (!s) return;
@@ -213,16 +249,11 @@ function applyScenario(id: string) {
     s.intentAmount;
   document.querySelector<HTMLInputElement>("#expiresAt")!.value = "0";
   scenarioHint.textContent = s.hint;
-  scenarioHint.classList.remove("is-switching");
-  void scenarioHint.offsetWidth;
-  scenarioHint.classList.add("is-switching");
-  document.querySelectorAll(".panel").forEach((el) => {
-    el.classList.remove("is-switching");
-    void (el as HTMLElement).offsetWidth;
-    el.classList.add("is-switching");
-  });
   document.querySelectorAll(".preset").forEach((p) => p.classList.remove("active"));
   document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
+  document.querySelectorAll<HTMLElement>("[data-scenario]").forEach((el) => {
+    el.classList.toggle("active", el.dataset.scenario === id);
+  });
   policy = null;
   lastSig = "";
   policyChip.textContent = "Not locked";
@@ -231,56 +262,62 @@ function applyScenario(id: string) {
   signChip.className = "chip";
   refreshHints();
   sync();
-  setStatus("idle", "Ready", "Lock the rules, then try a payout.");
+  if (currentView !== "home") {
+    setStatus("idle", "Ready", "Lock the rules, then send a payout.");
+  }
 }
 
 themeToggle.addEventListener("click", () => {
   setTheme(currentTheme() === "dark" ? "light" : "dark");
 });
 
-document.querySelectorAll<HTMLButtonElement>(".seg").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".seg").forEach((b) => {
-      b.classList.remove("active");
-      b.setAttribute("aria-selected", "false");
-    });
-    btn.classList.add("active");
-    btn.setAttribute("aria-selected", "true");
-    applyScenario(btn.dataset.scenario || "fassets");
+document.querySelectorAll<HTMLElement>("[data-nav]").forEach((el) => {
+  el.addEventListener("click", (e) => {
+    const id = el.dataset.nav as ViewId | undefined;
+    if (!id) return;
+    if (el.tagName === "A") e.preventDefault();
+    showView(id);
+  });
+});
+
+document.querySelectorAll<HTMLElement>("[data-scenario]").forEach((el) => {
+  el.addEventListener("click", () => {
+    applyScenario(el.dataset.scenario || "fassets");
   });
 });
 
 document.querySelectorAll<HTMLButtonElement>(".preset").forEach((btn) => {
   btn.addEventListener("click", () => {
     const seconds = Number(btn.dataset.expire || "0");
-    const value =
-      seconds === 0 ? "0" : String(Math.floor(Date.now() / 1000) + seconds);
-    document.querySelector<HTMLInputElement>("#expiresAt")!.value = value;
-    document.querySelectorAll(".preset").forEach((p) => p.classList.remove("active"));
+    const input = document.querySelector<HTMLInputElement>("#expiresAt")!;
+    input.value =
+      seconds === 0
+        ? "0"
+        : String(Math.floor(Date.now() / 1000) + seconds);
+    document
+      .querySelectorAll(".preset")
+      .forEach((p) => p.classList.remove("active"));
     btn.classList.add("active");
   });
 });
 
 document.querySelector("#copyAllowlist")!.addEventListener("click", () => {
-  void copyText(
-    document.querySelector<HTMLInputElement>("#allowlist")!.value,
-    "Allowlist copied"
-  );
+  const v = document.querySelector<HTMLInputElement>("#allowlist")!.value;
+  void copyText(v, "Copied");
 });
 
 document.querySelector("#matchRecipient")!.addEventListener("click", () => {
-  const list = parseAllowlist(
+  const first = parseAllowlist(
     document.querySelector<HTMLInputElement>("#allowlist")!.value
-  );
-  if (list[0]) {
-    document.querySelector<HTMLInputElement>("#intentRecipient")!.value =
-      list[0];
-    toast("Matched first allowlisted address");
+  )[0];
+  if (first) {
+    document.querySelector<HTMLInputElement>("#intentRecipient")!.value = first;
+    toast("Using first approved wallet");
   }
 });
 
 copySigBtn.addEventListener("click", () => {
-  if (lastSig) void copyText(lastSig, "Signature copied");
+  if (lastSig) void copyText(lastSig, "Proof copied");
 });
 
 document.querySelector("#maxAmount")!.addEventListener("input", refreshHints);
@@ -316,6 +353,7 @@ setPolicyBtn.addEventListener("click", async () => {
       });
       if (res.status !== 1) {
         setStatus("bad", "Could not lock", res.log ?? "Rules were refused.");
+        addActivity("bad", "Lock failed", res.log ?? "Rules refused");
         return;
       }
     }
@@ -326,14 +364,14 @@ setPolicyBtn.addEventListener("click", async () => {
     signChip.textContent = "Waiting";
     signChip.className = "chip";
     sync();
-    setStatus(
-      "ok",
-      "Rules locked",
-      `${next.allowedRecipients.length} approved · limit ${next.maxAmount.toLocaleString("en-US")}`
-    );
+    const summary = `${next.allowedRecipients.length} approved · limit ${next.maxAmount.toLocaleString("en-US")}`;
+    setStatus("ok", "Rules locked", summary);
+    addActivity("ok", "Rules locked", summary);
     toast("Rules locked");
+    showView("send");
   } catch (e) {
     setStatus("bad", "Something went wrong", String(e));
+    addActivity("bad", "Lock error", String(e));
   } finally {
     setPolicyBtn.classList.remove("busy");
     setPolicyBtn.disabled = false;
@@ -343,7 +381,8 @@ setPolicyBtn.addEventListener("click", async () => {
 
 trySignBtn.addEventListener("click", async () => {
   if (!policy && !live) {
-    setStatus("bad", "Lock rules first", "Set who can get paid and the limit, then lock.");
+    setStatus("bad", "Lock rules first", "Go to Rules, lock them, then send.");
+    showView("rules");
     return;
   }
 
@@ -372,10 +411,13 @@ trySignBtn.addEventListener("click", async () => {
         signChip.textContent = "Refused";
         signChip.className = "chip bad";
         const msg = (res.log ?? "").replace(/^error:\s*/i, "");
-        setStatus(
+        const body =
+          ERRORS[msg] ?? res.log ?? "This payout breaks the locked rules.";
+        setStatus("bad", "Payout blocked", body);
+        addActivity(
           "bad",
           "Payout blocked",
-          ERRORS[msg] ?? res.log ?? "This payout breaks the locked rules."
+          `${fmt(intent.amount.toString())} to ${short(intent.recipient)} · ${body}`
         );
         return;
       }
@@ -385,7 +427,12 @@ trySignBtn.addEventListener("click", async () => {
       setStatus(
         "ok",
         "Payout approved",
-        "Secure vault signed this. The rules were followed."
+        "The vault signed this. The rules were followed."
+      );
+      addActivity(
+        "ok",
+        "Payout approved",
+        `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
       );
       toast("Payout approved");
       return;
@@ -397,7 +444,13 @@ trySignBtn.addEventListener("click", async () => {
       lastSig = "";
       signChip.textContent = "Refused";
       signChip.className = "chip bad";
-      setStatus("bad", "Payout blocked", ERRORS[err] ?? err);
+      const body = ERRORS[err] ?? err;
+      setStatus("bad", "Payout blocked", body);
+      addActivity(
+        "bad",
+        "Payout blocked",
+        `${fmt(intent.amount.toString())} to ${short(intent.recipient)} · ${body}`
+      );
       return;
     }
 
@@ -411,12 +464,18 @@ trySignBtn.addEventListener("click", async () => {
       "Payout approved",
       `${intent.amount.toLocaleString("en-US")} to ${short(intent.recipient)}`
     );
+    addActivity(
+      "ok",
+      "Payout approved",
+      `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
+    );
     toast("Payout approved");
   } catch (e) {
     lastSig = "";
     signChip.textContent = "Error";
     signChip.className = "chip bad";
     setStatus("bad", "Something went wrong", String(e));
+    addActivity("bad", "Send error", String(e));
   } finally {
     trySignBtn.classList.remove("busy");
     sync();
@@ -443,14 +502,15 @@ tryWrongBtn.addEventListener("click", () => {
 document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
 refreshHints();
 sync();
+showView("home");
 
 if (live) {
   modeBadge.dataset.mode = "live";
-  modeBadge.textContent = "Live vault";
+  modeBadge.textContent = "Live";
   setStatus(
     "idle",
-    "Live secure vault",
-    "Connected on Flare. Lock the rules, then try a payout."
+    "Live vault online",
+    "Connected on Flare. Open Rules to lock payout controls."
   );
 } else {
   modeBadge.dataset.mode = "preview";
@@ -458,6 +518,6 @@ if (live) {
   setStatus(
     "idle",
     "Demo mode",
-    "Same rules as the live vault. Lock who can get paid, set a limit, then try Approve or a break attempt."
+    "Same rules as live. Open the app to lock who can get paid and try a payout."
   );
 }
