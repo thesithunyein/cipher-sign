@@ -361,17 +361,11 @@ function humanizeError(err: unknown): {
       tech,
     };
   }
-  if (lower.includes("invalid address") || lower.includes("address")) {
-    return {
-      title: "Invalid address",
-      body: "One of the wallet addresses is not valid. Paste a full 0x address from MetaMask.",
-      tech,
-    };
-  }
   if (
     lower.includes("user rejected") ||
     lower.includes("rejected the request") ||
-    lower.includes("denied transaction")
+    lower.includes("denied transaction") ||
+    lower.includes("user denied")
   ) {
     return {
       title: "Wallet rejected",
@@ -386,9 +380,42 @@ function humanizeError(err: unknown): {
       tech,
     };
   }
+  if (
+    lower.includes("extension id not found") ||
+    lower.includes("not registered for this instructionsender") ||
+    lower.includes("extension not registered")
+  ) {
+    return {
+      title: "Extension not registered",
+      body: "InstructionSender is not linked on-chain. From tee/ run ./scripts/post-build.sh, then retry Lock.",
+      tech,
+    };
+  }
+  if (
+    lower.includes("setextensionid") &&
+    (lower.includes("revert") || lower.includes("failed"))
+  ) {
+    return {
+      title: "Could not activate contract",
+      body: "setExtensionId failed on Coston2. Ensure this InstructionSender is registered to your extension, then retry.",
+      tech,
+    };
+  }
+  // Only treat true address-format failures — not every string containing "address".
+  if (
+    /\binvalid address\b/.test(lower) ||
+    /\baddress ["']0x[0-9a-fA-F]*["'] is invalid\b/.test(lower) ||
+    lower.includes("is not a valid ethereum address")
+  ) {
+    return {
+      title: "Invalid address",
+      body: "One of the wallet addresses is not valid. Paste a full 0x address from MetaMask.",
+      tech,
+    };
+  }
   return {
     title: "Something went wrong",
-    body: tech.slice(0, 220) || "We could not complete that request.",
+    body: tech.slice(0, 280) || "We could not complete that request.",
     tech,
   };
 }
