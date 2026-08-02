@@ -1,6 +1,5 @@
 /**
  * One-time: set InstructionSender._extensionId on Coston2 using tee/.env PRIVATE_KEY.
- * Avoids the expensive registry scan in the product wallet UX.
  *
  *   node scripts/set-extension-id.mjs
  */
@@ -12,6 +11,7 @@ import {
   createWalletClient,
   http,
   parseAbi,
+  encodeFunctionData,
   formatEther,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -46,36 +46,35 @@ function loadEnv(path) {
 const teeEnv = loadEnv(resolve(root, "tee/.env"));
 const extEnv = loadEnv(resolve(root, "tee/config/extension.env"));
 const pkRaw = teeEnv.PRIVATE_KEY || process.env.PRIVATE_KEY;
-const sender =
+const sender = /** @type {`0x${string}`} */ (
   extEnv.INSTRUCTION_SENDER ||
-  teeEnv.INSTRUCTION_SENDER ||
-  "0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9";
-const extHex =
-  extEnv.EXTENSION_ID ||
-  teeEnv.EXTENSION_ID ||
-  "0x0000000000000000000000000000000000000000000000000000000000000665";
+    teeEnv.INSTRUCTION_SENDER ||
+    "0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9"
+);
 
 if (!pkRaw) {
   console.error("Missing PRIVATE_KEY in tee/.env");
   process.exit(1);
 }
 
-const pk = pkRaw.startsWith("0x") ? pkRaw : `0x${pkRaw}`;
+const pk = /** @type {`0x${string}`} */ (
+  pkRaw.startsWith("0x") ? pkRaw : `0x${pkRaw}`
+);
 const account = privateKeyToAccount(pk);
-const extensionId = BigInt(extHex);
 
 const chain = {
   id: 114,
   name: "Coston2",
   nativeCurrency: { name: "C2FLR", symbol: "C2FLR", decimals: 18 },
-  rpcUrls: { default: { http: ["https://coston2-api.flare.network/ext/C/rpc"] } },
+  rpcUrls: {
+    default: { http: ["https://coston2-api.flare.network/ext/C/rpc"] },
+  },
 };
 
+// Deployed contract: only the no-arg scanner exists today.
 const abi = parseAbi([
   "function _extensionId() view returns (uint256)",
-  "function setExtensionId() external",
-  "function discoverExtensionId() external",
-  "function setExtensionId(uint256 id) external",
+  "function setExtensionId()",
 ]);
 
 const publicClient = createPublicClient({
@@ -96,34 +95,39 @@ const current = await publicClient.readContract({
 console.log("InstructionSender", sender);
 console.log("wallet", account.address);
 console.log("current _extensionId", current.toString());
-console.log("target EXTENSION_ID", extensionId.toString());
 
 if (current !== 0n) {
   console.log("Already set — nothing to do.");
   process.exit(0);
 }
 
-// Deployed bytecode only has the no-arg scanner (old ABI). Use that.
-const { request } = await publicClient.simulateContract({
-  account,
-  address: sender,
+const data = encodeFunctionData({
   abi,
   functionName: "setExtensionId",
 });
+
 const gas = await publicClient.estimateGas({
-  account,
+  account: account.address,
   to: sender,
-  data: request.data,
+  data,
 });
 const gasPrice = await publicClient.getGasPrice();
-console.log(
-  "estimated cost",
-  formatEther(gas * gasPrice),
-  "C2FLR · gas",
-  gas.toString()
-);
+const cost = gas * gasPrice;
+console.log("estimated cost", formatEther(cost), "C2FLR · gas", gas.toString());
 
-const hash = await walletClient.writeContract(request);
+const balance = await publicClient.getBalance({ address: account.address });
+if (balance < cost) {
+  console.error(
+    `Need ~${formatEther(cost)} C2FLR, wallet has ${formatEther(balance)}`
+  );
+  process.exit(1);
+}
+
+const hash = await walletClient.sendTransaction({
+  to: sender,
+  data,
+  gas: (gas * 12n) / 10n,
+});
 console.log("tx", hash);
 const receipt = await publicClient.waitForTransactionReceipt({ hash });
 console.log("status", receipt.status);
@@ -137,4 +141,4 @@ if (after === 0n) {
   console.error("FAILED — still 0");
   process.exit(1);
 }
-console.log("OK — product Lock can skip activate scan");
+console.log("OK");
