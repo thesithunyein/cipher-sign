@@ -75,6 +75,7 @@ let lastSig = "";
 let toastTimer = 0;
 let workspace: Workspace | null = null;
 let vaultState: VaultState = "checking";
+let policyLocking = false;
 
 const policyChip = document.querySelector<HTMLElement>("#policyChip")!;
 const signChip = document.querySelector<HTMLElement>("#signChip")!;
@@ -326,7 +327,9 @@ function sync() {
   trySignBtn.disabled = !ready;
   tryBadBtn.disabled = !ready;
   tryWrongBtn.disabled = !ready;
-  setPolicyBtn.disabled = !isAuthed();
+  // Only disable Lock while a request is in flight — never leave it stuck.
+  setPolicyBtn.disabled = policyLocking || !isAuthed();
+  setPolicyBtn.classList.toggle("busy", policyLocking);
   if (isAuthed()) refreshDashboard();
 }
 
@@ -489,7 +492,12 @@ function showView(id: ViewId) {
   document.querySelectorAll<HTMLElement>(".app-nav-item").forEach((el) => {
     el.classList.toggle("active", el.dataset.nav === id);
   });
+  // Reset stuck Lock button when opening Rules.
+  if (id === "rules") {
+    policyLocking = false;
+  }
   refreshVaultUi();
+  sync();
   if (id === "landing" || statusEl.dataset.kind === "idle") {
     statusEl.hidden = true;
     copySigBtn.hidden = true;
@@ -623,6 +631,13 @@ document.querySelector("#intentAmount")!.addEventListener("input", refreshHints)
 document.querySelector("#allowlist")!.addEventListener("input", refreshDashboard);
 
 setPolicyBtn.addEventListener("click", async () => {
+  if (policyLocking) return;
+  if (!isAuthed() || !liveCfg) {
+    toast("Connect first");
+    showView("landing");
+    return;
+  }
+
   const input = document.querySelector<HTMLInputElement>("#allowlist")!;
   const parts = input.value
     .split(/[\s,]+/)
@@ -646,23 +661,22 @@ setPolicyBtn.addEventListener("click", async () => {
   // Write normalized checksums back into the field.
   input.value = next.allowedRecipients.join(", ");
 
-  setPolicyBtn.classList.add("busy");
-  setPolicyBtn.disabled = true;
+  policyLocking = true;
+  sync();
   try {
-    if (usingLive() && liveCfg) {
-      const res = await sendDirectInstruction({
-        baseUrl: liveCfg.baseUrl,
-        apiKey: liveCfg.apiKey,
-        opType: "KEY",
-        opCommand: "SET_POLICY",
-        originalMessage: encodePolicy(next),
-      });
-      if (res.status !== 1) {
-        const log = (res.log ?? "Rules were refused.").replace(/^error:\s*/i, "");
-        setStatus("bad", "Could not lock", ERRORS[log] ?? log);
-        addActivity("bad", "Lock failed", log);
-        return;
-      }
+    const res = await sendDirectInstruction({
+      baseUrl: liveCfg.baseUrl,
+      apiKey: liveCfg.apiKey,
+      opType: "KEY",
+      opCommand: "SET_POLICY",
+      originalMessage: encodePolicy(next),
+      timeoutMs: 25_000,
+    });
+    if (res.status !== 1) {
+      const log = (res.log ?? "Rules were refused.").replace(/^error:\s*/i, "");
+      setStatus("bad", "Could not lock", ERRORS[log] ?? log);
+      addActivity("bad", "Lock failed", log);
+      return;
     }
     policy = next;
     lastSig = "";
@@ -670,7 +684,6 @@ setPolicyBtn.addEventListener("click", async () => {
     policyChip.className = "chip ok";
     signChip.textContent = "Waiting";
     signChip.className = "chip";
-    sync();
     const summary = `${next.allowedRecipients.length} approved · limit ${next.maxAmount.toLocaleString("en-US")}`;
     setStatus("ok", "Rules locked", summary);
     addActivity("ok", "Rules locked", summary);
@@ -680,13 +693,9 @@ setPolicyBtn.addEventListener("click", async () => {
     const msg = humanizeError(e);
     setStatus("bad", msg.title, msg.body, msg.tech);
     addActivity("bad", msg.title, msg.body);
-    if (msg.title.startsWith("Vault")) {
-      toast("Connection lost");
-      disconnectVault({ quiet: true });
-    }
+    toast(msg.title);
   } finally {
-    setPolicyBtn.classList.remove("busy");
-    setPolicyBtn.disabled = !isAuthed();
+    policyLocking = false;
     sync();
   }
 });
