@@ -313,12 +313,34 @@ function setStatus(
   statusEl.classList.add("is-updating");
 }
 
+function activityTarget(title: string): ViewId {
+  const t = title.toLowerCase();
+  if (t.includes("rule") || t.includes("lock")) return "rules";
+  return "send";
+}
+
 function addActivity(kind: "ok" | "bad" | "idle", title: string, body: string) {
   const empty = activityList.querySelector(".activity-empty");
   if (empty) empty.remove();
   const li = document.createElement("li");
   li.dataset.kind = kind;
-  li.innerHTML = `<strong>${title}</strong><span>${body}</span><time>${new Date().toLocaleTimeString()}</time>`;
+  const target = activityTarget(title);
+  li.dataset.nav = target;
+  li.tabIndex = 0;
+  li.setAttribute("role", "button");
+  li.setAttribute(
+    "aria-label",
+    `${title}. Open ${target === "rules" ? "Rules" : "Send"}`
+  );
+  li.innerHTML = `<div class="activity-main"><strong>${title}</strong><span>${body}</span><time>${new Date().toLocaleTimeString()}</time></div><span class="activity-go" aria-hidden="true">Open →</span>`;
+  const go = () => showView(target);
+  li.addEventListener("click", go);
+  li.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      go();
+    }
+  });
   activityList.prepend(li);
 }
 

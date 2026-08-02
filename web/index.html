@@ -254,12 +254,16 @@
       <section class="view" id="view-activity" hidden>
         <div class="page-head">
           <h1>Activity</h1>
-          <p>Approved and blocked payouts in this session.</p>
+          <p>Tap a row to open Rules or Send. This session only.</p>
         </div>
         <div class="panel activity-panel">
           <ul class="activity-list" id="activityList">
-            <li class="activity-empty">No activity yet.</li>
+            <li class="activity-empty">No activity yet. Lock rules, then send a payout.</li>
           </ul>
+          <div class="cta-row activity-actions">
+            <button type="button" class="btn" data-nav="send">Send payout</button>
+            <button type="button" class="btn quiet" data-nav="rules">Edit rules</button>
+          </div>
         </div>
       </section>
 
