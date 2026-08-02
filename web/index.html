@@ -70,103 +70,69 @@
     <main>
       <section class="view" id="view-landing">
         <div class="hero reveal" style="--d: 1">
-          <p class="eyebrow">Payout control for finance teams</p>
+          <p class="eyebrow">For finance &amp; ops teams</p>
           <h1>Stop payout mistakes<br />before money leaves.</h1>
           <p class="lede">
-            Set who can get paid and a spending limit. Overpay or wrong person
-            gets blocked — secured on Flare.
+            One place to set <strong>who</strong> can get paid and a
+            <strong>spending limit</strong>. Wrong person or overpay gets blocked.
           </p>
           <div class="cta-row">
-            <a class="btn" href="#faq">Read Q&amp;A</a>
-            <a class="btn quiet" href="#how">How it works</a>
+            <button type="button" class="btn" id="startTeam">Connect</button>
+            <a class="btn quiet" href="#faq">Q&amp;A</a>
           </div>
-          <p class="trust-line">Secured on Flare</p>
+          <p class="trust-line">Secured on Flare · 3 steps</p>
         </div>
 
-        <div class="value-row reveal" style="--d: 2" id="how">
+        <div class="glance reveal" style="--d: 2" id="how" aria-label="How CipherSign works">
           <article>
-            <h3>Control</h3>
-            <p>Only people you approve can get paid.</p>
+            <span class="glance-num">1</span>
+            <h3>Connect</h3>
+            <p>Open your payout workspace.</p>
           </article>
           <article>
-            <h3>Budget</h3>
-            <p>A hard spending limit the vault cannot ignore.</p>
+            <span class="glance-num">2</span>
+            <h3>Set rules</h3>
+            <p>Approved people + spending limit.</p>
           </article>
           <article>
-            <h3>Safety</h3>
-            <p>Bad payouts are refused before money moves.</p>
+            <span class="glance-num">3</span>
+            <h3>Send</h3>
+            <p>Good payouts pass. Bad ones block.</p>
           </article>
         </div>
 
-        <div class="steps reveal" style="--d: 3">
-          <h2>How it works</h2>
-          <ol>
-            <li><strong>Connect</strong> your secure vault</li>
-            <li><strong>Set rules</strong> for who can get paid and the limit</li>
-            <li><strong>Send payouts</strong> — good ones pass, bad ones block</li>
-          </ol>
-        </div>
-
-        <div class="faq reveal" style="--d: 4" id="faq">
-          <h2>Questions before you connect</h2>
+        <div class="faq reveal" style="--d: 3" id="faq">
+          <h2>Q&amp;A</h2>
+          <p class="faq-lead">Optional — tap a question if you need it.</p>
           <div class="faq-list">
-            <details class="faq-item" open>
-              <summary>Who is CipherSign for?</summary>
-              <p>
-                Finance and ops teams that send payouts — fees, payroll, or rewards —
-                and need a hard stop on overpay or wrong-person mistakes.
-              </p>
-            </details>
             <details class="faq-item">
-              <summary>Do I need a wallet to explore?</summary>
-              <p>
-                No. Read this page first. You only connect when you are ready to open
-                your payout workspace and lock real rules.
-              </p>
+              <summary>Who is this for?</summary>
+              <p>Teams that send fees, payroll, or rewards and need to stop overpay / wrong-person mistakes.</p>
             </details>
             <details class="faq-item">
               <summary>What does Connect do?</summary>
-              <p>
-                Connect links your browser to the CipherSign secure vault on Flare.
-                After that you can set who can get paid, set a spending limit, and
-                approve or block payouts.
-              </p>
+              <p>Links to the CipherSign vault on Flare so you can lock rules and approve payouts.</p>
             </details>
             <details class="faq-item">
-              <summary>Where do wallet addresses come from?</summary>
-              <p>
-                Copy them from MetaMask (or any wallet): click the account name →
-                Copy address → paste into Rules. Use real team wallets, not sample ones.
-              </p>
+              <summary>Where do I get wallet addresses?</summary>
+              <p>From MetaMask (or any wallet): copy the account address, paste into Rules.</p>
             </details>
             <details class="faq-item">
               <summary>What gets blocked?</summary>
-              <p>
-                After rules are locked, the vault refuses payouts over your spending
-                limit and payouts to anyone not on your approved list.
-              </p>
+              <p>Anything over your limit, or paid to someone not on your approved list.</p>
             </details>
             <details class="faq-item">
-              <summary>Is this a trading or swap app?</summary>
-              <p>
-                No. CipherSign is payout control for teams — not DEX trading, token
-                swaps, or a consumer wallet.
-              </p>
+              <summary>Is this a trading app?</summary>
+              <p>No — payout control only. Not for swapping or trading tokens.</p>
             </details>
           </div>
-        </div>
-
-        <div class="connect-cta reveal" style="--d: 5">
-          <h2>Ready to control payouts?</h2>
-          <p>Connect the vault to open Home, Rules, Send, and Activity.</p>
-          <button type="button" class="btn" id="startTeam">Connect to start</button>
         </div>
       </section>
 
       <section class="view" id="view-home" hidden>
         <div class="page-head">
           <h1>Home</h1>
-          <p id="homeSub">Your payout workspace.</p>
+          <p id="homeSub">Your payout workspace — start with Rules.</p>
         </div>
 
         <div class="dash-grid">
@@ -188,23 +154,23 @@
         </div>
 
         <div class="panel checklist-panel">
-          <h2>What to do next</h2>
+          <h2>Do this next</h2>
           <ol class="checklist" id="checklist">
-            <li data-step="1">Set who can get paid and a spending limit</li>
-            <li data-step="2">Lock the rules</li>
-            <li data-step="3">Send a payout</li>
+            <li data-step="1">Go to Rules — add payees and a limit</li>
+            <li data-step="2">Lock rules</li>
+            <li data-step="3">Go to Send — approve a payout</li>
           </ol>
           <div class="cta-row">
-            <button type="button" class="btn" data-nav="rules" id="dashRulesBtn">Edit rules</button>
-            <button type="button" class="btn quiet" data-nav="send" id="dashSendBtn">Send payout</button>
+            <button type="button" class="btn" data-nav="rules" id="dashRulesBtn">Go to Rules</button>
+            <button type="button" class="btn quiet" data-nav="send" id="dashSendBtn">Go to Send</button>
           </div>
         </div>
       </section>
 
       <section class="view" id="view-rules" hidden>
         <div class="page-head">
-          <h1>Payout rules</h1>
-          <p>Decide who can get paid and how much. Lock when ready.</p>
+          <h1>Rules</h1>
+          <p>Add payees, set a limit, then Lock. Nothing is enforced until you lock.</p>
         </div>
 
         <div class="panel" id="policyPanel">
@@ -259,8 +225,8 @@
 
       <section class="view" id="view-send" hidden>
         <div class="page-head">
-          <h1>Send a payout</h1>
-          <p>If a payment breaks your rules, the vault refuses it.</p>
+          <h1>Send</h1>
+          <p>Ask the vault to approve a payout. Breaks the rules → blocked.</p>
         </div>
 
         <div class="panel" id="requestPanel">
@@ -309,7 +275,7 @@
       <section class="view" id="view-activity" hidden>
         <div class="page-head">
           <h1>Activity</h1>
-          <p>Tap a row to open Rules or Send. This session only.</p>
+          <p>This session. Tap a row to jump to Rules or Send.</p>
         </div>
         <div class="panel activity-panel">
           <ul class="activity-list" id="activityList">
@@ -342,13 +308,13 @@
     <div class="modal" id="workspaceModal" hidden>
       <div class="modal-card" role="dialog" aria-labelledby="wsTitle" aria-modal="true">
         <h2 id="wsTitle">Name your workspace</h2>
-        <p>This is your payout control space after you connect.</p>
+        <p>One name for your team. Next you will set Rules.</p>
         <label>
           Workspace name
           <input id="teamName" type="text" maxlength="40" placeholder="e.g. Acme Finance" value="" autocomplete="organization" />
         </label>
         <div class="cta-row">
-          <button type="button" class="btn" id="confirmWorkspace">Continue</button>
+          <button type="button" class="btn" id="confirmWorkspace">Open workspace</button>
           <button type="button" class="btn quiet" id="cancelWorkspace">Cancel</button>
         </div>
       </div>
