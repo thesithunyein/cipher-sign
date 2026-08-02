@@ -1,5 +1,5 @@
 import "./style.css";
-import { keccak256, toBytes, type Hex } from "viem";
+import { getAddress, keccak256, toBytes, type Hex } from "viem";
 import {
   encodeIntent,
   encodePolicy,
@@ -268,9 +268,16 @@ function humanizeError(err: unknown): {
       tech,
     };
   }
+  if (lower.includes("invalid address") || lower.includes("address")) {
+    return {
+      title: "Invalid address",
+      body: "One of the wallet addresses is not valid. Paste a full 0x address from MetaMask.",
+      tech,
+    };
+  }
   return {
     title: "Something went wrong",
-    body: "We could not complete that request. See technical details if you need to debug.",
+    body: tech.slice(0, 220) || "We could not complete that request.",
     tech,
   };
 }
@@ -279,7 +286,7 @@ function setStatus(
   kind: "idle" | "ok" | "bad",
   title: string,
   body: string,
-  _tech?: string
+  tech?: string
 ) {
   if (kind === "idle" || !isAuthed() || !title || !body) {
     statusEl.hidden = true;
@@ -289,8 +296,17 @@ function setStatus(
   statusEl.hidden = false;
   statusEl.dataset.kind = kind;
   statusTitle.textContent = title;
-  statusBody.textContent = body;
+  // Prefer human body; append short tech when it adds signal.
+  statusBody.textContent =
+    tech && !body.includes(tech.slice(0, 40)) && kind === "bad"
+      ? `${body}`
+      : body;
   copySigBtn.hidden = !(kind === "ok" && Boolean(lastSig));
+  // Allow copying the raw error for support.
+  if (kind === "bad" && tech) {
+    copySigBtn.hidden = false;
+    lastSig = tech;
+  }
   statusEl.classList.remove("is-updating");
   void statusEl.offsetWidth;
   statusEl.classList.add("is-updating");
@@ -367,15 +383,33 @@ function isAddress(value: string): value is `0x${string}` {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
+/** Normalize to EIP-55 so viem encode never throws on mixed-case paste. */
+function normalizeAddress(value: string): `0x${string}` | null {
+  if (!isAddress(value)) return null;
+  try {
+    return getAddress(value);
+  } catch {
+    try {
+      return getAddress(value.toLowerCase() as `0x${string}`);
+    } catch {
+      return null;
+    }
+  }
+}
+
 function short(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
 function parseAllowlist(raw: string): `0x${string}`[] {
-  return raw
-    .split(/[\s,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean) as `0x${string}`[];
+  const out: `0x${string}`[] = [];
+  for (const part of raw.split(/[\s,]+/)) {
+    const t = part.trim();
+    if (!t) continue;
+    const n = normalizeAddress(t);
+    if (n) out.push(n);
+  }
+  return out;
 }
 
 async function copyText(text: string, okMsg: string) {
@@ -402,9 +436,10 @@ function readPolicy(): Policy {
 }
 
 function readIntent(): SignIntent {
-  const recipient = (
+  const raw = (
     document.querySelector<HTMLInputElement>("#intentRecipient")!.value || ""
-  ).trim() as `0x${string}`;
+  ).trim();
+  const recipient = normalizeAddress(raw) ?? (raw as `0x${string}`);
   const amount = BigInt(
     document.querySelector<HTMLInputElement>("#intentAmount")!.value || "0"
   );
@@ -589,11 +624,16 @@ document.querySelector("#allowlist")!.addEventListener("input", refreshDashboard
 
 setPolicyBtn.addEventListener("click", async () => {
   const input = document.querySelector<HTMLInputElement>("#allowlist")!;
+  const parts = input.value
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   const next = readPolicy();
   const valid =
-    next.allowedRecipients.length > 0 &&
-    next.allowedRecipients.length <= 5 &&
-    next.allowedRecipients.every(isAddress);
+    parts.length > 0 &&
+    parts.length <= 5 &&
+    parts.length === next.allowedRecipients.length &&
+    next.allowedRecipients.length <= 5;
   input.classList.toggle("invalid", !valid);
   if (!valid) {
     setStatus(
@@ -603,6 +643,8 @@ setPolicyBtn.addEventListener("click", async () => {
     );
     return;
   }
+  // Write normalized checksums back into the field.
+  input.value = next.allowedRecipients.join(", ");
 
   setPolicyBtn.classList.add("busy");
   setPolicyBtn.disabled = true;
@@ -616,8 +658,9 @@ setPolicyBtn.addEventListener("click", async () => {
         originalMessage: encodePolicy(next),
       });
       if (res.status !== 1) {
-        setStatus("bad", "Could not lock", res.log ?? "Rules were refused.");
-        addActivity("bad", "Lock failed", res.log ?? "Rules refused");
+        const log = (res.log ?? "Rules were refused.").replace(/^error:\s*/i, "");
+        setStatus("bad", "Could not lock", ERRORS[log] ?? log);
+        addActivity("bad", "Lock failed", log);
         return;
       }
     }
@@ -657,12 +700,14 @@ trySignBtn.addEventListener("click", async () => {
 
   const intentInput =
     document.querySelector<HTMLInputElement>("#intentRecipient")!;
-  const intent = readIntent();
-  intentInput.classList.toggle("invalid", !isAddress(intent.recipient));
-  if (!isAddress(intent.recipient)) {
+  const normalizedPayTo = normalizeAddress(intentInput.value.trim());
+  intentInput.classList.toggle("invalid", !normalizedPayTo);
+  if (!normalizedPayTo) {
     setStatus("bad", "Check pay-to", "That address does not look valid.");
     return;
   }
+  intentInput.value = normalizedPayTo;
+  const intent = readIntent();
 
   trySignBtn.classList.add("busy");
   trySignBtn.disabled = true;
