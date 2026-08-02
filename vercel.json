@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/fcc/:path*",
-      "destination": "https://release-recruitment-centres-glad.trycloudflare.com/:path*"
+      "destination": "https://levy-engaging-bouquet-crystal.trycloudflare.com/:path*"
     }
   ]
 }

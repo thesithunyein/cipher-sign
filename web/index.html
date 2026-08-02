@@ -106,26 +106,7 @@
           <p class="trust-line">Secured on Flare</p>
         </div>
 
-        <div class="audience reveal" style="--d: 2">
-          <div class="audience-col">
-            <h2>Who it is for</h2>
-            <ul>
-              <li>Finance and ops leads who approve payouts</li>
-              <li>Teams that pay contractors, fees, or rewards with scripts</li>
-              <li>Anyone who needs a hard stop on overspend</li>
-            </ul>
-          </div>
-          <div class="audience-col muted-col">
-            <h2>Who it is not for</h2>
-            <ul>
-              <li>Trading or swapping tokens</li>
-              <li>Buying crypto as a consumer</li>
-              <li>People looking for a wallet app</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="value-row reveal" style="--d: 3" id="how">
+        <div class="value-row reveal" style="--d: 2" id="how">
           <article>
             <span class="value-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M19 8v4M21 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -149,7 +130,7 @@
           </article>
         </div>
 
-        <div class="steps reveal" style="--d: 4">
+        <div class="steps reveal" style="--d: 3">
           <h2>How it works</h2>
           <ol>
             <li><strong>Set rules</strong>: who can get paid and the spending limit</li>
@@ -161,56 +142,66 @@
 
       <!-- DASHBOARD (has workspace) -->
       <section class="view" id="view-home" hidden>
-        <div class="page-head">
-          <h1>Home</h1>
-          <p id="homeSub">Your payout control workspace.</p>
-        </div>
-
-        <div class="dash-grid">
-          <article class="dash-card">
-            <span class="dash-label">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
-              Rules
-            </span>
-            <strong id="dashRules">Not locked</strong>
-            <span id="dashRulesMeta">Set who can get paid and your limit</span>
-          </article>
-          <article class="dash-card">
-            <span class="dash-label">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V7Z" stroke="currentColor" stroke-width="1.5"/><path d="M12 3v4M8 14v3a4 4 0 0 0 8 0v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-              Spending limit
-            </span>
-            <strong id="dashLimit">-</strong>
-            <span>Maximum for any single payout</span>
-          </article>
-          <article class="dash-card">
-            <span class="dash-label">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM4 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M19 8v4M21 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-              Approved people
-            </span>
-            <strong id="dashPeople">0</strong>
-            <span>Can receive payouts</span>
-          </article>
-          <article class="dash-card">
-            <span class="dash-label">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 8.5 4.3-1.1 7.5-4 7.5-8.5V6L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-              Vault
-            </span>
-            <strong id="dashVault">Starting</strong>
-            <span id="dashVaultMeta">Connection status</span>
-          </article>
-        </div>
-
-        <div class="panel checklist-panel">
-          <h2>What to do next</h2>
-          <ol class="checklist" id="checklist">
-            <li data-step="1">Set who can get paid and a spending limit</li>
-            <li data-step="2">Lock the rules</li>
-            <li data-step="3">Send a payout (or see why it was blocked)</li>
-          </ol>
+        <div class="panel connect-gate" id="connectGate" hidden>
+          <div class="connect-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 8.5 4.3-1.1 7.5-4 7.5-8.5V6L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 10v3M12 15.5h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h1 id="gateTitle">Connect your vault</h1>
+          <p id="gateBody">CipherSign needs the secure vault before your team workspace opens.</p>
           <div class="cta-row">
-            <button type="button" class="btn" data-nav="rules" id="dashRulesBtn">Edit rules</button>
-            <button type="button" class="btn quiet" data-nav="send" id="dashSendBtn">Send payout</button>
+            <button type="button" class="btn btn-icon" id="gateConnect">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 8.5 4.3-1.1 7.5-4 7.5-8.5V6L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+              Connect vault
+            </button>
+            <button type="button" class="btn quiet" id="gateOffline">Continue offline</button>
+          </div>
+          <p class="hint" id="gateHint">Offline uses the same payout rules in this browser only.</p>
+        </div>
+
+        <div id="homeReady" hidden>
+          <div class="page-head">
+            <h1>Home</h1>
+            <p id="homeSub">Your payout control workspace.</p>
+          </div>
+
+          <div class="dash-grid">
+            <article class="dash-card">
+              <span class="dash-label">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+                Rules
+              </span>
+              <strong id="dashRules">Not locked</strong>
+              <span id="dashRulesMeta">Set who can get paid and your limit</span>
+            </article>
+            <article class="dash-card">
+              <span class="dash-label">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 10h17M8 15h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Spending limit
+              </span>
+              <strong id="dashLimit">-</strong>
+              <span>Maximum for any single payout</span>
+            </article>
+            <article class="dash-card">
+              <span class="dash-label">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.25" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Approved people
+              </span>
+              <strong id="dashPeople">0</strong>
+              <span>Can receive payouts</span>
+            </article>
+          </div>
+
+          <div class="panel checklist-panel">
+            <h2>What to do next</h2>
+            <ol class="checklist" id="checklist">
+              <li data-step="1">Set who can get paid and a spending limit</li>
+              <li data-step="2">Lock the rules</li>
+              <li data-step="3">Send a payout (or see why it was blocked)</li>
+            </ol>
+            <div class="cta-row">
+              <button type="button" class="btn" data-nav="rules" id="dashRulesBtn">Edit rules</button>
+              <button type="button" class="btn quiet" data-nav="send" id="dashSendBtn">Send payout</button>
+            </div>
           </div>
         </div>
       </section>
@@ -413,10 +404,6 @@
             <summary>Technical details</summary>
             <code id="statusTech"></code>
           </details>
-          <div class="status-actions" id="statusActions" hidden>
-            <button type="button" class="btn quiet btn-sm" id="retryVault">Retry connect</button>
-            <button type="button" class="btn quiet btn-sm" id="goOffline">Work offline</button>
-          </div>
         </div>
         <button type="button" class="field-btn ghost" id="copySig" hidden title="Copy proof" aria-label="Copy proof">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
