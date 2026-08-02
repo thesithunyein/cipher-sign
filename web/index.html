@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta
       name="description"
-      content="CipherSign is a locked payout vault. Only approved people can get paid, under a spending limit you control. Built on Flare."
+      content="CipherSign helps finance and ops teams stop payout mistakes. Set who can get paid and a spending limit. Overpay or wrong person gets blocked. Secured on Flare."
     />
     <meta name="theme-color" content="#07070c" />
     <meta name="color-scheme" content="dark light" />
-    <title>CipherSign</title>
+    <title>CipherSign — Stop payout mistakes</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/logo-mark.png" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
@@ -45,14 +45,15 @@
         </a>
 
         <nav class="app-nav" id="appNav" aria-label="Product" hidden>
-          <button type="button" class="app-nav-item active" data-nav="home">Home</button>
+          <button type="button" class="app-nav-item" data-nav="home">Home</button>
           <button type="button" class="app-nav-item" data-nav="rules">Rules</button>
           <button type="button" class="app-nav-item" data-nav="send">Send</button>
           <button type="button" class="app-nav-item" data-nav="activity">Activity</button>
         </nav>
 
         <div class="nav-actions">
-          <span class="mode-badge" id="modeBadge" data-mode="preview">Demo</span>
+          <span class="team-chip" id="teamChip" hidden></span>
+          <span class="mode-badge" id="modeBadge" data-mode="preview">Offline</span>
           <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Theme">
             <svg class="icon sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5" />
@@ -67,67 +68,112 @@
     </header>
 
     <main>
-      <!-- LANDING -->
-      <section class="view view-home reveal" id="view-home" style="--d: 1">
-        <div class="hero">
-          <p class="eyebrow">Payout control for real teams</p>
-          <h1>Pay people safely.<br />Stop overspend.</h1>
+      <!-- MARKETING (no workspace) -->
+      <section class="view" id="view-landing">
+        <div class="hero reveal" style="--d: 1">
+          <p class="eyebrow">For finance and ops teams</p>
+          <h1>Stop payout mistakes<br />before money leaves.</h1>
           <p class="lede">
-            CipherSign is a locked company wallet for payouts. You choose who can
-            get paid and the maximum amount. If a payment breaks those rules,
-            it is refused. Built on Flare so the key cannot quietly change the rules.
+            Set who can get paid and a spending limit. If a bot or script tries to
+            overpay or pay the wrong person, CipherSign blocks it.
           </p>
           <div class="cta-row">
-            <button type="button" class="btn" id="launchApp" data-nav="rules">Open app</button>
-            <a class="btn quiet" href="https://youtu.be/QZfP10quo0E" target="_blank" rel="noreferrer">Watch 2‑min demo</a>
+            <button type="button" class="btn" id="startTeam">Start for your team</button>
+            <a class="btn quiet" href="#how">See how it works</a>
+          </div>
+          <p class="trust-line">Secured on Flare</p>
+        </div>
+
+        <div class="audience reveal" style="--d: 2">
+          <div class="audience-col">
+            <h2>Who it is for</h2>
+            <ul>
+              <li>Finance and ops leads who approve payouts</li>
+              <li>Teams that pay contractors, fees, or rewards with scripts</li>
+              <li>Anyone who needs a hard stop on overspend</li>
+            </ul>
+          </div>
+          <div class="audience-col muted-col">
+            <h2>Who it is not for</h2>
+            <ul>
+              <li>Trading or swapping tokens</li>
+              <li>Buying crypto as a consumer</li>
+              <li>People looking for a wallet app</li>
+            </ul>
           </div>
         </div>
 
-        <div class="value-row">
+        <div class="value-row reveal" style="--d: 3" id="how">
           <article>
-            <h3>Real problem</h3>
-            <p>Ops bots and fee scripts can drain funds if a hot key is stolen or a bug fires a huge transfer.</p>
+            <h3>Control</h3>
+            <p>Only people you approve can get paid.</p>
           </article>
           <article>
-            <h3>Real users</h3>
-            <p>Finance ops, automation teams, and reward managers who need payouts that stay inside a budget.</p>
+            <h3>Budget</h3>
+            <p>A hard spending limit the vault cannot ignore.</p>
           </article>
           <article>
-            <h3>Real control</h3>
-            <p>Approved people only. Spending limit. Optional end date. Break the rules and the vault says no.</p>
+            <h3>Safety</h3>
+            <p>Bad payouts are refused before money moves.</p>
           </article>
         </div>
 
-        <div class="steps">
+        <div class="steps reveal" style="--d: 4">
           <h2>How it works</h2>
           <ol>
             <li><strong>Set rules</strong>: who can get paid and the spending limit</li>
-            <li><strong>Lock them</strong>: rules sit in secure hardware on Flare</li>
-            <li><strong>Send payouts</strong>: approved ones go through; bad ones are blocked</li>
+            <li><strong>Lock them</strong>: rules are secured so they cannot quietly change</li>
+            <li><strong>Send payouts</strong>: good ones go through, bad ones are blocked</li>
           </ol>
         </div>
+      </section>
 
-        <div class="use-cases">
-          <h2>Built for everyday payout jobs</h2>
-          <div class="use-grid">
-            <button type="button" class="use-card active" data-scenario="fassets">
-              <span class="use-title">Fee payouts</span>
-              <span class="use-body">Pay fixed fee wallets under a hard budget</span>
-            </button>
-            <button type="button" class="use-card" data-scenario="bot">
-              <span class="use-title">Team / bot payroll</span>
-              <span class="use-body">Automation can only pay the wallets you approve</span>
-            </button>
-            <button type="button" class="use-card" data-scenario="ftso">
-              <span class="use-title">Partner rewards</span>
-              <span class="use-body">Forward rewards only to the locked payout wallet</span>
-            </button>
+      <!-- DASHBOARD (has workspace) -->
+      <section class="view" id="view-home" hidden>
+        <div class="page-head">
+          <h1>Home</h1>
+          <p id="homeSub">Your payout control workspace.</p>
+        </div>
+
+        <div class="dash-grid">
+          <article class="dash-card">
+            <span class="dash-label">Rules</span>
+            <strong id="dashRules">Not locked</strong>
+            <span id="dashRulesMeta">Set who can get paid and your limit</span>
+          </article>
+          <article class="dash-card">
+            <span class="dash-label">Spending limit</span>
+            <strong id="dashLimit">-</strong>
+            <span>Maximum for any single payout</span>
+          </article>
+          <article class="dash-card">
+            <span class="dash-label">Approved people</span>
+            <strong id="dashPeople">0</strong>
+            <span>Can receive payouts</span>
+          </article>
+          <article class="dash-card">
+            <span class="dash-label">Vault</span>
+            <strong id="dashVault">Starting</strong>
+            <span id="dashVaultMeta">Connection status</span>
+          </article>
+        </div>
+
+        <div class="panel checklist-panel">
+          <h2>What to do next</h2>
+          <ol class="checklist" id="checklist">
+            <li data-step="1">Set who can get paid and a spending limit</li>
+            <li data-step="2">Lock the rules</li>
+            <li data-step="3">Send a payout (or see why it was blocked)</li>
+          </ol>
+          <div class="cta-row">
+            <button type="button" class="btn" data-nav="rules" id="dashRulesBtn">Edit rules</button>
+            <button type="button" class="btn quiet" data-nav="send" id="dashSendBtn">Send payout</button>
           </div>
         </div>
       </section>
 
       <!-- RULES -->
-      <section class="view view-app" id="view-rules" hidden>
+      <section class="view" id="view-rules" hidden>
         <div class="page-head">
           <h1>Payout rules</h1>
           <p>Decide who can get paid and how much. Lock when ready.</p>
@@ -139,9 +185,9 @@
             <span class="chip" id="policyChip">Not locked</span>
           </div>
 
-          <div class="workspace" aria-label="Payout job">
+          <div class="workspace" aria-label="Payout type">
             <button type="button" class="chip-btn active" data-scenario="fassets">Fee payouts</button>
-            <button type="button" class="chip-btn" data-scenario="bot">Bot payroll</button>
+            <button type="button" class="chip-btn" data-scenario="bot">Team payroll</button>
             <button type="button" class="chip-btn" data-scenario="ftso">Rewards</button>
           </div>
           <p class="scenario-hint" id="scenarioHint">
@@ -157,7 +203,7 @@
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="1.5"/></svg>
               </button>
             </div>
-            <span class="hint">Wallet IDs, up to 5, separated by commas</span>
+            <span class="hint">Replace sample payees with your team wallets. Up to 5, separated by commas.</span>
           </label>
 
           <div class="row">
@@ -184,10 +230,10 @@
       </section>
 
       <!-- SEND -->
-      <section class="view view-app" id="view-send" hidden>
+      <section class="view" id="view-send" hidden>
         <div class="page-head">
-          <h1>Send payout</h1>
-          <p>Ask the vault to approve a payment. If it breaks the rules, it will refuse.</p>
+          <h1>Send a payout</h1>
+          <p>Ask the vault to approve a payment. If it breaks your rules, it will refuse.</p>
         </div>
 
         <div class="panel" id="requestPanel">
@@ -201,7 +247,7 @@
             <div class="field">
               <input id="intentRecipient" class="mono" type="text" spellcheck="false" autocomplete="off"
                 value="0x1111111111111111111111111111111111111111" />
-              <button type="button" class="field-btn" id="matchRecipient" title="Use first approved wallet" aria-label="Use first approved wallet">
+              <button type="button" class="field-btn" id="matchRecipient" title="Use first approved person" aria-label="Use first approved person">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7h7v7M17 17H10V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>
@@ -223,8 +269,8 @@
           <button type="button" id="trySign" class="btn" disabled>Approve payout</button>
 
           <details class="safety">
-            <summary>Test safety limits</summary>
-            <p>Optional checks to prove the vault refuses bad payments.</p>
+            <summary>Advanced: test safety limits</summary>
+            <p>Optional. Prove the vault refuses bad payments.</p>
             <div class="actions">
               <button type="button" id="tryBad" class="btn quiet" disabled>Pay over the limit</button>
               <button type="button" id="tryWrong" class="btn quiet" disabled>Pay the wrong person</button>
@@ -234,10 +280,10 @@
       </section>
 
       <!-- ACTIVITY -->
-      <section class="view view-app" id="view-activity" hidden>
+      <section class="view" id="view-activity" hidden>
         <div class="page-head">
           <h1>Activity</h1>
-          <p>What the vault did in this session.</p>
+          <p>Approved and blocked payouts in this session.</p>
         </div>
         <div class="panel activity-panel">
           <ul class="activity-list" id="activityList">
@@ -246,11 +292,11 @@
         </div>
       </section>
 
-      <div class="status reveal" id="status" data-kind="idle" style="--d: 2" hidden>
+      <div class="status" id="status" data-kind="idle" hidden>
         <div class="status-mark" aria-hidden="true"></div>
         <div>
           <strong id="statusTitle">Ready</strong>
-          <span id="statusBody">Open the app to set payout rules.</span>
+          <span id="statusBody">Start for your team to begin.</span>
         </div>
         <button type="button" class="field-btn ghost" id="copySig" hidden title="Copy proof" aria-label="Copy proof">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="1.5"/></svg>
@@ -258,12 +304,29 @@
       </div>
     </main>
 
-    <footer class="reveal" style="--d: 3">
+    <footer>
       <span>CipherSign</span>
-      <span>Powered by Flare secure compute</span>
-      <a href="https://dorahacks.io/buidl/47182/" target="_blank" rel="noreferrer">DoraHacks</a>
+      <span>Secured on Flare</span>
       <a href="https://github.com/thesithunyein/cipher-sign" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://dorahacks.io/buidl/47182/" target="_blank" rel="noreferrer">DoraHacks</a>
     </footer>
+
+    <!-- Workspace modal -->
+    <div class="modal" id="workspaceModal" hidden>
+      <div class="modal-card" role="dialog" aria-labelledby="wsTitle" aria-modal="true">
+        <h2 id="wsTitle">Start for your team</h2>
+        <p>You are Finance Ops. Name your payout workspace to continue.</p>
+        <label>
+          Team name
+          <input id="teamName" type="text" maxlength="40" value="Acme Payouts" autocomplete="organization" />
+        </label>
+        <p class="hint">Saved in this browser only. No password yet.</p>
+        <div class="cta-row">
+          <button type="button" class="btn" id="confirmWorkspace">Continue</button>
+          <button type="button" class="btn quiet" id="cancelWorkspace">Cancel</button>
+        </div>
+      </div>
+    </div>
 
     <div class="toast" id="toast" hidden></div>
     <script type="module" src="/src/main.ts"></script>

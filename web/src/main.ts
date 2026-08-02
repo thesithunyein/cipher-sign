@@ -10,7 +10,11 @@ import {
 } from "./fcc";
 
 type Policy = SignPolicy;
-type ViewId = "home" | "rules" | "send" | "activity";
+type ViewId = "landing" | "home" | "rules" | "send" | "activity";
+
+type Workspace = { team: string; role: string };
+
+const WS_KEY = "cs-workspace";
 
 const SCENARIOS: Record<
   string,
@@ -31,7 +35,7 @@ const SCENARIOS: Record<
     intentAmount: "500000",
   },
   bot: {
-    hint: "Bot payroll: automation can pay only the ops wallet you approve.",
+    hint: "Team payroll: automation can pay only the people you approve.",
     allowlist: ["0x2222222222222222222222222222222222222222"],
     maxAmount: "5000000",
     intentAmount: "2500000",
@@ -48,8 +52,8 @@ const ERRORS: Record<string, string> = {
   "no private key stored": "Vault key is not loaded yet.",
   "policy expired": "These payout rules have ended.",
   "intent deadline passed": "This payout took too long and timed out.",
-  "recipient not allowed by policy": "That person is not on the approved list.",
-  "amount exceeds policy maxAmount": "That amount is over the spending limit.",
+  "recipient not allowed by policy": "Blocked: that person is not approved.",
+  "amount exceeds policy maxAmount": "Blocked: that amount is over your spending limit.",
 };
 
 const OUTSIDER = "0x9999999999999999999999999999999999999999" as const;
@@ -57,7 +61,8 @@ const OUTSIDER = "0x9999999999999999999999999999999999999999" as const;
 let policy: Policy | null = null;
 let lastSig = "";
 let toastTimer = 0;
-let currentView: ViewId = "home";
+let currentView: ViewId = "landing";
+let workspace: Workspace | null = null;
 
 const policyChip = document.querySelector<HTMLElement>("#policyChip")!;
 const signChip = document.querySelector<HTMLElement>("#signChip")!;
@@ -76,7 +81,10 @@ const amountHint = document.querySelector<HTMLElement>("#amountHint")!;
 const scenarioHint = document.querySelector<HTMLElement>("#scenarioHint")!;
 const modeBadge = document.querySelector<HTMLElement>("#modeBadge")!;
 const appNav = document.querySelector<HTMLElement>("#appNav")!;
+const teamChip = document.querySelector<HTMLElement>("#teamChip")!;
 const activityList = document.querySelector<HTMLElement>("#activityList")!;
+const workspaceModal = document.querySelector<HTMLElement>("#workspaceModal")!;
+const teamNameInput = document.querySelector<HTMLInputElement>("#teamName")!;
 const live = liveConfig();
 
 function toast(message: string) {
@@ -98,8 +106,33 @@ function currentTheme(): "light" | "dark" {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
+function loadWorkspace(): Workspace | null {
+  try {
+    const raw = localStorage.getItem(WS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Workspace;
+    if (!parsed.team) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveWorkspace(ws: Workspace) {
+  workspace = ws;
+  localStorage.setItem(WS_KEY, JSON.stringify(ws));
+  teamChip.hidden = false;
+  teamChip.textContent = ws.team;
+  const homeSub = document.querySelector("#homeSub");
+  if (homeSub) {
+    homeSub.textContent = `${ws.role} · ${ws.team}`;
+  }
+}
+
 function setStatus(kind: "idle" | "ok" | "bad", title: string, body: string) {
-  statusEl.hidden = currentView === "home";
+  const hide = currentView === "landing";
+  statusEl.hidden = hide;
+  if (hide) return;
   statusEl.dataset.kind = kind;
   statusTitle.textContent = title;
   statusBody.textContent = body;
@@ -123,6 +156,7 @@ function sync() {
   trySignBtn.disabled = !ready;
   tryBadBtn.disabled = !ready;
   tryWrongBtn.disabled = !ready;
+  refreshDashboard();
 }
 
 function fmt(raw: string) {
@@ -140,6 +174,49 @@ function refreshHints() {
   amountHint.textContent = fmt(
     document.querySelector<HTMLInputElement>("#intentAmount")!.value
   );
+}
+
+function refreshDashboard() {
+  const dashRules = document.querySelector("#dashRules");
+  const dashRulesMeta = document.querySelector("#dashRulesMeta");
+  const dashLimit = document.querySelector("#dashLimit");
+  const dashPeople = document.querySelector("#dashPeople");
+  const dashVault = document.querySelector("#dashVault");
+  const dashVaultMeta = document.querySelector("#dashVaultMeta");
+  if (!dashRules) return;
+
+  if (policy) {
+    dashRules.textContent = "Locked";
+    dashRulesMeta!.textContent = "Payouts must follow these rules";
+    dashLimit!.textContent = policy.maxAmount.toLocaleString("en-US");
+    dashPeople!.textContent = String(policy.allowedRecipients.length);
+  } else {
+    dashRules.textContent = "Not locked";
+    dashRulesMeta!.textContent = "Set who can get paid and your limit";
+    dashLimit!.textContent = fmt(
+      document.querySelector<HTMLInputElement>("#maxAmount")?.value || "0"
+    );
+    dashPeople!.textContent = String(
+      parseAllowlist(
+        document.querySelector<HTMLInputElement>("#allowlist")?.value || ""
+      ).length
+    );
+  }
+
+  if (live) {
+    dashVault!.textContent = "Live";
+    dashVaultMeta!.textContent = "Connected on Flare";
+  } else {
+    dashVault!.textContent = "Local";
+    dashVaultMeta!.textContent = "Same rules, local session";
+  }
+
+  document.querySelectorAll<HTMLElement>("#checklist li").forEach((li) => {
+    const step = li.dataset.step;
+    li.classList.toggle("done", step === "1" || (step === "2" && Boolean(policy)));
+    if (step === "1") li.classList.add("done");
+    if (step === "2") li.classList.toggle("done", Boolean(policy));
+  });
 }
 
 function isAddress(value: string): value is `0x${string}` {
@@ -216,25 +293,51 @@ function fakeSig(intentHex: Hex) {
 }
 
 function showView(id: ViewId) {
+  if (!workspace && id !== "landing") {
+    openWorkspaceModal();
+    return;
+  }
+  if (workspace && id === "landing") {
+    id = "home";
+  }
+
   currentView = id;
   document.querySelectorAll<HTMLElement>(".view").forEach((el) => {
     el.hidden = el.id !== `view-${id}`;
   });
-  document.querySelectorAll<HTMLElement>("[data-nav]").forEach((el) => {
-    if (el instanceof HTMLButtonElement || el.classList.contains("app-nav-item")) {
-      el.classList.toggle("active", el.dataset.nav === id);
-    }
+  document.querySelectorAll<HTMLElement>(".app-nav-item").forEach((el) => {
+    const nav = el.dataset.nav === "home" ? "home" : el.dataset.nav;
+    el.classList.toggle("active", nav === id || (id === "landing" && nav === "home"));
   });
-  appNav.hidden = false;
-  statusEl.hidden = id === "home";
-  if (id === "home") {
-    // keep landing clean
-  } else if (id === "rules" && !policy) {
+  appNav.hidden = !workspace;
+  statusEl.hidden = id === "landing";
+  refreshDashboard();
+
+  if (id === "rules" && !policy) {
     setStatus("idle", "Set your rules", "Choose who can get paid and the spending limit, then lock.");
   } else if (id === "send" && !policy && !live) {
     setStatus("idle", "Lock rules first", "Go to Rules, lock them, then come back to send.");
+  } else if (id === "home" && workspace) {
+    setStatus(
+      "idle",
+      policy ? "Ready to send" : "Next: lock rules",
+      policy
+        ? "Rules are locked. Send a payout when you are ready."
+        : "Open Rules to set who can get paid and your spending limit."
+    );
   }
+
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function openWorkspaceModal() {
+  workspaceModal.hidden = false;
+  teamNameInput.focus();
+  teamNameInput.select();
+}
+
+function closeWorkspaceModal() {
+  workspaceModal.hidden = true;
 }
 
 function applyScenario(id: string) {
@@ -262,7 +365,7 @@ function applyScenario(id: string) {
   signChip.className = "chip";
   refreshHints();
   sync();
-  if (currentView !== "home") {
+  if (currentView !== "landing") {
     setStatus("idle", "Ready", "Lock the rules, then send a payout.");
   }
 }
@@ -271,12 +374,35 @@ themeToggle.addEventListener("click", () => {
   setTheme(currentTheme() === "dark" ? "light" : "dark");
 });
 
+document.querySelector("#startTeam")?.addEventListener("click", () => {
+  openWorkspaceModal();
+});
+
+document.querySelector("#confirmWorkspace")?.addEventListener("click", () => {
+  const team = teamNameInput.value.trim() || "My team";
+  saveWorkspace({ team, role: "Finance Ops" });
+  closeWorkspaceModal();
+  showView("home");
+  toast(`Welcome, ${team}`);
+});
+
+document.querySelector("#cancelWorkspace")?.addEventListener("click", () => {
+  closeWorkspaceModal();
+});
+
+workspaceModal.addEventListener("click", (e) => {
+  if (e.target === workspaceModal) closeWorkspaceModal();
+});
+
 document.querySelectorAll<HTMLElement>("[data-nav]").forEach((el) => {
   el.addEventListener("click", (e) => {
-    const id = el.dataset.nav as ViewId | undefined;
-    if (!id) return;
+    const raw = el.dataset.nav;
+    if (!raw) return;
     if (el.tagName === "A") e.preventDefault();
-    showView(id);
+    const id = (raw === "home" && !workspace ? "landing" : raw) as ViewId;
+    if (raw === "home" && workspace) showView("home");
+    else if (raw === "home" && !workspace) showView("landing");
+    else showView(id);
   });
 });
 
@@ -312,7 +438,7 @@ document.querySelector("#matchRecipient")!.addEventListener("click", () => {
   )[0];
   if (first) {
     document.querySelector<HTMLInputElement>("#intentRecipient")!.value = first;
-    toast("Using first approved wallet");
+    toast("Using first approved person");
   }
 });
 
@@ -320,8 +446,12 @@ copySigBtn.addEventListener("click", () => {
   if (lastSig) void copyText(lastSig, "Proof copied");
 });
 
-document.querySelector("#maxAmount")!.addEventListener("input", refreshHints);
+document.querySelector("#maxAmount")!.addEventListener("input", () => {
+  refreshHints();
+  refreshDashboard();
+});
 document.querySelector("#intentAmount")!.addEventListener("input", refreshHints);
+document.querySelector("#allowlist")!.addEventListener("input", refreshDashboard);
 
 setPolicyBtn.addEventListener("click", async () => {
   const input = document.querySelector<HTMLInputElement>("#allowlist")!;
@@ -391,7 +521,7 @@ trySignBtn.addEventListener("click", async () => {
   const intent = readIntent();
   intentInput.classList.toggle("invalid", !isAddress(intent.recipient));
   if (!isAddress(intent.recipient)) {
-    setStatus("bad", "Check pay-to", "That wallet address does not look valid.");
+    setStatus("bad", "Check pay-to", "That address does not look valid.");
     return;
   }
 
@@ -419,6 +549,7 @@ trySignBtn.addEventListener("click", async () => {
           "Payout blocked",
           `${fmt(intent.amount.toString())} to ${short(intent.recipient)} · ${body}`
         );
+        document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
         return;
       }
       lastSig = res.data ?? "";
@@ -427,13 +558,14 @@ trySignBtn.addEventListener("click", async () => {
       setStatus(
         "ok",
         "Payout approved",
-        "The vault signed this. The rules were followed."
+        `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
       );
       addActivity(
         "ok",
         "Payout approved",
         `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
       );
+      document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
       toast("Payout approved");
       return;
     }
@@ -451,6 +583,7 @@ trySignBtn.addEventListener("click", async () => {
         "Payout blocked",
         `${fmt(intent.amount.toString())} to ${short(intent.recipient)} · ${body}`
       );
+      document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
       return;
     }
 
@@ -469,6 +602,7 @@ trySignBtn.addEventListener("click", async () => {
       "Payout approved",
       `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
     );
+    document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
     toast("Payout approved");
   } catch (e) {
     lastSig = "";
@@ -501,23 +635,20 @@ tryWrongBtn.addEventListener("click", () => {
 
 document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
 refreshHints();
-sync();
-showView("home");
 
 if (live) {
   modeBadge.dataset.mode = "live";
   modeBadge.textContent = "Live";
-  setStatus(
-    "idle",
-    "Live vault online",
-    "Connected on Flare. Open Rules to lock payout controls."
-  );
 } else {
   modeBadge.dataset.mode = "preview";
-  modeBadge.textContent = "Demo";
-  setStatus(
-    "idle",
-    "Demo mode",
-    "Same rules as live. Open the app to lock who can get paid and try a payout."
-  );
+  modeBadge.textContent = "Local";
 }
+
+workspace = loadWorkspace();
+if (workspace) {
+  saveWorkspace(workspace);
+  showView("home");
+} else {
+  showView("landing");
+}
+sync();
