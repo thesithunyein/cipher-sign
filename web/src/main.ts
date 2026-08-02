@@ -73,6 +73,8 @@ function outsiderAddress(): `0x${string}` {
 let policy: Policy | null = null;
 let lastSig = "";
 let lastError = "";
+let lastProofSummary = "";
+let proofBlobUrl = "";
 let toastTimer = 0;
 let workspace: Workspace | null = null;
 let vaultState: VaultState = "checking";
@@ -80,7 +82,9 @@ let policyLocking = false;
 
 const proofPanel = document.querySelector<HTMLElement>("#proofPanel")!;
 const proofIdInput = document.querySelector<HTMLInputElement>("#proofId")!;
+const proofLinkInput = document.querySelector<HTMLInputElement>("#proofLink")!;
 const proofSigArea = document.querySelector<HTMLTextAreaElement>("#proofSig")!;
+const openProofBtn = document.querySelector<HTMLAnchorElement>("#openProof")!;
 
 const policyChip = document.querySelector<HTMLElement>("#policyChip")!;
 const signChip = document.querySelector<HTMLElement>("#signChip")!;
@@ -299,23 +303,78 @@ function proofIdFromSig(sig: string): string {
   }
 }
 
+function revokeProofBlob() {
+  if (proofBlobUrl) {
+    URL.revokeObjectURL(proofBlobUrl);
+    proofBlobUrl = "";
+  }
+}
+
+function buildProofReceipt(sig: string, summary: string, proofId: string): string {
+  const when = new Date().toISOString();
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>CipherSign approval · ${esc(proofId)}</title>
+<style>
+  :root { color-scheme: dark; font-family: ui-sans-serif, system-ui, sans-serif; }
+  body { margin: 0; min-height: 100vh; background: #0b1220; color: #e8eefc; padding: 2rem; }
+  main { max-width: 40rem; margin: 0 auto; }
+  h1 { font-size: 1.35rem; margin: 0 0 .35rem; }
+  .muted { color: #9db0d0; font-size: .95rem; line-height: 1.45; }
+  .row { margin: 1.25rem 0; }
+  .label { display: block; font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: #7f95b8; margin-bottom: .35rem; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+  .box { background: #121a2b; border: 1px solid #24314a; border-radius: 10px; padding: .85rem 1rem; }
+  .ok { color: #7ddea0; }
+</style>
+</head>
+<body>
+<main>
+  <p class="ok">CipherSign · vault approval proof</p>
+  <h1>${esc(summary)}</h1>
+  <p class="muted">Signed by the CipherSign Flare TEE vault after locked rules passed. This is vault signature proof (demo <code>/direct</code>), not a Coston2 payment explorer transaction.</p>
+  <div class="row"><span class="label">Proof ID</span><div class="box mono">${esc(proofId)}</div></div>
+  <div class="row"><span class="label">Approved at (UTC)</span><div class="box mono">${esc(when)}</div></div>
+  <div class="row"><span class="label">Full vault signature</span><div class="box mono">${esc(sig)}</div></div>
+</main>
+</body>
+</html>`;
+}
+
 function showProof(sig: string, summary: string) {
   lastSig = sig;
+  lastProofSummary = summary;
   proofPanel.hidden = !sig;
   if (!sig) {
-    proofIdInput.value = "";
-    proofSigArea.value = "";
+    hideProof();
     return;
   }
-  proofIdInput.value = proofIdFromSig(sig);
+  const proofId = proofIdFromSig(sig);
+  proofIdInput.value = proofId;
   proofSigArea.value = sig;
-  setStatus("ok", "Payout approved", `${summary} · Proof ID ${proofIdInput.value}`);
+  revokeProofBlob();
+  const blob = new Blob([buildProofReceipt(sig, summary, proofId)], {
+    type: "text/html",
+  });
+  proofBlobUrl = URL.createObjectURL(blob);
+  proofLinkInput.value = proofBlobUrl;
+  openProofBtn.href = proofBlobUrl;
+  setStatus("ok", "Payout approved", `${summary} · Proof ID ${proofId}`);
 }
 
 function hideProof() {
   proofPanel.hidden = true;
   proofIdInput.value = "";
+  proofLinkInput.value = "";
   proofSigArea.value = "";
+  lastProofSummary = "";
+  openProofBtn.href = "#";
+  revokeProofBlob();
 }
 
 function setStatus(
@@ -683,11 +742,23 @@ copySigBtn.addEventListener("click", () => {
 });
 
 document.querySelector("#copyProof")?.addEventListener("click", () => {
-  if (lastSig) void copyText(lastSig, "Full proof copied");
+  if (!lastSig) return;
+  const payload = [
+    "CipherSign approval proof",
+    `Summary: ${lastProofSummary}`,
+    `Proof ID: ${proofIdInput.value}`,
+    `Signature: ${lastSig}`,
+    "Note: Flare TEE vault signature via /direct (not a Coston2 payment tx).",
+  ].join("\n");
+  void copyText(payload, "Full proof copied");
 });
 
 document.querySelector("#copyProofId")?.addEventListener("click", () => {
   if (proofIdInput.value) void copyText(proofIdInput.value, "Proof ID copied");
+});
+
+document.querySelector("#copyProofLink")?.addEventListener("click", () => {
+  if (proofLinkInput.value) void copyText(proofLinkInput.value, "Confirmation link copied");
 });
 
 document.querySelector("#maxAmount")!.addEventListener("input", () => {
@@ -798,6 +869,8 @@ trySignBtn.addEventListener("click", async () => {
         originalMessage: encodeIntent(intent),
       });
       if (res.status !== 1) {
+        lastSig = "";
+        hideProof();
         lastSig = "";
         hideProof();
         signChip.textContent = "Refused";
