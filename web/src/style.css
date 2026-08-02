@@ -718,62 +718,6 @@ main {
   gap: 0.35rem;
 }
 
-.connect-gate {
-  text-align: center;
-  padding: 2rem 1.35rem 1.6rem;
-  display: grid;
-  justify-items: center;
-  gap: 0.65rem;
-}
-
-.connect-gate[hidden] {
-  display: none !important;
-}
-
-.connect-ico {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  color: var(--brand);
-  background: var(--brand-soft);
-  border: 1px solid color-mix(in srgb, var(--brand) 28%, var(--line));
-  margin-bottom: 0.25rem;
-}
-
-.connect-ico svg {
-  width: 1.45rem;
-  height: 1.45rem;
-}
-
-.connect-gate h1 {
-  margin: 0;
-  font-size: 1.45rem;
-  letter-spacing: -0.04em;
-}
-
-.connect-gate > p {
-  margin: 0;
-  max-width: 28rem;
-  color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.connect-gate .cta-row {
-  margin-top: 0.35rem;
-  justify-content: center;
-}
-
-.connect-gate .hint {
-  margin: 0;
-}
-
-#homeReady[hidden] {
-  display: none !important;
-}
-
 .dash-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1445,19 +1389,10 @@ input.invalid {
   display: none;
 }
 
-.status-mark .status-ico.idle {
-  display: block;
-}
-
 .status[data-kind="ok"] .status-mark {
   color: var(--ok);
   background: var(--ok-soft);
   border-color: color-mix(in srgb, var(--ok) 35%, var(--line));
-}
-
-.status[data-kind="ok"] .status-mark .status-ico.idle,
-.status[data-kind="bad"] .status-mark .status-ico.idle {
-  display: none;
 }
 
 .status[data-kind="ok"] .status-mark .status-ico.ok {

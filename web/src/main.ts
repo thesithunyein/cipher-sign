@@ -94,32 +94,17 @@ const statusDetails = document.querySelector<HTMLDetailsElement>("#statusDetails
 const statusTech = document.querySelector<HTMLElement>("#statusTech")!;
 const modeLabel = document.querySelector<HTMLElement>("#modeLabel")!;
 const vaultAction = document.querySelector<HTMLButtonElement>("#vaultAction")!;
-const connectGate = document.querySelector<HTMLElement>("#connectGate")!;
-const homeReady = document.querySelector<HTMLElement>("#homeReady")!;
-const gateTitle = document.querySelector<HTMLElement>("#gateTitle")!;
-const gateBody = document.querySelector<HTMLElement>("#gateBody")!;
-const gateConnect = document.querySelector<HTMLButtonElement>("#gateConnect")!;
-const gateOffline = document.querySelector<HTMLButtonElement>("#gateOffline")!;
 const liveCfg = liveConfig();
-
-/** Product session opens only after Live connect or explicit offline. */
-function sessionReady(): boolean {
-  if (!workspace) return false;
-  if (!liveCfg) return true;
-  return vaultState === "live" || vaultState === "local";
-}
 
 function usingLive(): boolean {
   return vaultState === "live" && Boolean(liveCfg);
 }
 
 function refreshSessionChrome() {
-  const ready = sessionReady();
-  teamChip.hidden = !ready || !workspace;
-  if (workspace && ready) {
-    teamChip.textContent = workspace.team;
-  }
-  appNav.hidden = !ready;
+  const inApp = Boolean(workspace);
+  teamChip.hidden = !inApp;
+  if (workspace) teamChip.textContent = workspace.team;
+  appNav.hidden = !inApp;
   vaultControlVisibility();
 }
 
@@ -137,8 +122,8 @@ function vaultControlVisibility() {
     checking: "Connecting",
     live: "Live",
     local: "Offline",
-    unreachable: "Not connected",
-    unavailable: "Local",
+    unreachable: "Offline",
+    unavailable: "Offline",
   };
   modeLabel.textContent = labels[vaultState];
 
@@ -152,49 +137,18 @@ function vaultControlVisibility() {
   vaultAction.disabled = vaultState === "checking";
   if (vaultState === "live") {
     vaultAction.textContent = "Disconnect";
-    vaultAction.title = "Leave live vault";
+    vaultAction.title = "Use offline mode";
   } else if (vaultState === "checking") {
     vaultAction.textContent = "Connecting…";
     vaultAction.title = "Connecting to vault";
   } else {
     vaultAction.textContent = "Connect";
-    vaultAction.title = "Connect to the secure vault";
-  }
-}
-
-function refreshHomeLayout() {
-  if (!workspace) {
-    connectGate.hidden = true;
-    homeReady.hidden = true;
-    return;
-  }
-  const ready = sessionReady();
-  connectGate.hidden = ready;
-  homeReady.hidden = !ready;
-
-  if (!ready) {
-    if (vaultState === "checking") {
-      gateTitle.textContent = "Connecting…";
-      gateBody.textContent = "Checking the secure vault.";
-      gateConnect.disabled = true;
-    } else if (vaultState === "unreachable") {
-      gateTitle.textContent = "Vault not connected";
-      gateBody.textContent =
-        "Could not reach the secure vault. Retry, or continue offline with the same rules in this browser.";
-      gateConnect.disabled = false;
-    } else {
-      gateTitle.textContent = "Connect your vault";
-      gateBody.textContent =
-        "CipherSign needs the secure vault before your team workspace opens.";
-      gateConnect.disabled = false;
-    }
+    vaultAction.title = "Connect live vault (optional)";
   }
 }
 
 function refreshVaultUi() {
-  vaultControlVisibility();
   refreshSessionChrome();
-  refreshHomeLayout();
   refreshDashboard();
 }
 
@@ -209,41 +163,26 @@ async function connectVault(opts?: { quiet?: boolean }) {
   refreshVaultUi();
 
   const ok = await probeVault(liveCfg.baseUrl);
-  vaultState = ok ? "live" : "unreachable";
-  refreshVaultUi();
-
   if (ok) {
+    vaultState = "live";
+    refreshVaultUi();
     if (!opts?.quiet) toast("Vault connected");
-    if (workspace) showView("home");
     return true;
   }
 
-  if (!opts?.quiet) toast("Vault not reachable");
-  if (workspace) showView("home");
+  // Ghostbook-style: stay in the app offline if live is down.
+  localStorage.setItem(VAULT_PREF_KEY, "local");
+  vaultState = "local";
+  refreshVaultUi();
+  if (!opts?.quiet) toast("Vault offline — using local mode");
   return false;
 }
 
-function disconnectVault(opts?: { quiet?: boolean; toGate?: boolean }) {
-  localStorage.setItem(VAULT_PREF_KEY, "local");
-  if (opts?.toGate && liveCfg) {
-    localStorage.removeItem(VAULT_PREF_KEY);
-    vaultState = "unreachable";
-  } else {
-    vaultState = liveCfg ? "local" : "unavailable";
-  }
-  refreshVaultUi();
-  if (!opts?.quiet) {
-    toast(opts?.toGate ? "Disconnected" : "Working offline");
-  }
-  if (workspace) showView(opts?.toGate ? "home" : currentView === "landing" ? "home" : currentView);
-}
-
-function continueOffline() {
+function disconnectVault(opts?: { quiet?: boolean }) {
   localStorage.setItem(VAULT_PREF_KEY, "local");
   vaultState = liveCfg ? "local" : "unavailable";
   refreshVaultUi();
-  toast("Working offline");
-  if (workspace) showView("home");
+  if (!opts?.quiet) toast("Offline mode");
 }
 
 async function initVault() {
@@ -252,18 +191,11 @@ async function initVault() {
     refreshVaultUi();
     return;
   }
-  const pref = localStorage.getItem(VAULT_PREF_KEY);
-  if (pref === "local") {
-    vaultState = "local";
-    refreshVaultUi();
-    return;
-  }
-  if (pref === "live") {
+  if (localStorage.getItem(VAULT_PREF_KEY) === "live") {
     await connectVault({ quiet: true });
     return;
   }
-  // No choice yet — stay gated (do not open team as if connected).
-  vaultState = "unreachable";
+  vaultState = "local";
   refreshVaultUi();
 }
 
@@ -350,9 +282,12 @@ function setStatus(
   body: string,
   tech?: string
 ) {
-  const hide = currentView === "landing" || !sessionReady();
-  statusEl.hidden = hide;
-  if (hide) return;
+  // Only show outcome banners — never the idle "Ready" strip.
+  if (kind === "idle" || currentView === "landing" || !workspace) {
+    statusEl.hidden = true;
+    return;
+  }
+  statusEl.hidden = false;
   statusEl.dataset.kind = kind;
   statusTitle.textContent = title;
   statusBody.textContent = body;
@@ -381,10 +316,12 @@ function addActivity(kind: "ok" | "bad" | "idle", title: string, body: string) {
 }
 
 function sync() {
+  // Offline works like Ghostbook: use the product without Connect.
   const ready = Boolean(policy) || usingLive();
   trySignBtn.disabled = !ready;
   tryBadBtn.disabled = !ready;
   tryWrongBtn.disabled = !ready;
+  setPolicyBtn.disabled = false;
   refreshDashboard();
 }
 
@@ -410,7 +347,7 @@ function refreshDashboard() {
   const dashRulesMeta = document.querySelector("#dashRulesMeta");
   const dashLimit = document.querySelector("#dashLimit");
   const dashPeople = document.querySelector("#dashPeople");
-  if (!dashRules || !sessionReady()) return;
+  if (!dashRules) return;
 
   if (policy) {
     dashRules.textContent = "Locked";
@@ -518,10 +455,6 @@ function showView(id: ViewId) {
   if (workspace && id === "landing") {
     id = "home";
   }
-  // Product rule: no Rules/Send/Activity until Connect or Continue offline.
-  if (workspace && !sessionReady() && id !== "home" && id !== "landing") {
-    id = "home";
-  }
 
   currentView = id;
   document.querySelectorAll<HTMLElement>(".view").forEach((el) => {
@@ -532,26 +465,9 @@ function showView(id: ViewId) {
     el.classList.toggle("active", nav === id || (id === "landing" && nav === "home"));
   });
   refreshVaultUi();
-  statusEl.hidden = id === "landing" || !sessionReady();
-
-  if (!sessionReady()) {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    return;
-  }
-
-  if (id === "rules" && !policy) {
-    setStatus("idle", "Set your rules", "Choose who can get paid and the spending limit, then lock.");
-  } else if (id === "send" && !policy && !usingLive()) {
-    setStatus("idle", "Lock rules first", "Go to Rules, lock them, then come back to send.");
-  } else if (id === "home" && workspace) {
-    setStatus(
-      "idle",
-      policy ? "Ready to send" : "Next: lock rules",
-      policy
-        ? "Rules are locked. Send a payout when you are ready."
-        : "Open Rules to set who can get paid and your spending limit."
-    );
-  }
+  // Clear idle banners when switching pages.
+  if (statusEl.dataset.kind === "idle") statusEl.hidden = true;
+  if (id === "landing") statusEl.hidden = true;
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -591,9 +507,6 @@ function applyScenario(id: string) {
   signChip.className = "chip";
   refreshHints();
   sync();
-  if (currentView !== "landing") {
-    setStatus("idle", "Ready", "Lock the rules, then send a payout.");
-  }
 }
 
 themeToggle.addEventListener("click", () => {
@@ -727,15 +640,23 @@ setPolicyBtn.addEventListener("click", async () => {
     showView("send");
   } catch (e) {
     const msg = humanizeError(e);
-    addActivity("bad", msg.title, msg.body);
     if (msg.title.startsWith("Vault") && liveCfg) {
-      localStorage.removeItem(VAULT_PREF_KEY);
-      vaultState = "unreachable";
-      refreshVaultUi();
-      showView("home");
-      toast(msg.title);
+      disconnectVault({ quiet: true });
+      policy = next;
+      lastSig = "";
+      policyChip.textContent = "Locked";
+      policyChip.className = "chip ok";
+      signChip.textContent = "Waiting";
+      signChip.className = "chip";
+      sync();
+      const summary = `${next.allowedRecipients.length} approved · limit ${next.maxAmount.toLocaleString("en-US")}`;
+      setStatus("ok", "Rules locked offline", summary);
+      addActivity("ok", "Rules locked offline", summary);
+      toast("Vault offline — locked locally");
+      showView("send");
     } else {
       setStatus("bad", msg.title, msg.body, msg.tech);
+      addActivity("bad", msg.title, msg.body);
     }
   } finally {
     setPolicyBtn.classList.remove("busy");
@@ -840,19 +761,46 @@ trySignBtn.addEventListener("click", async () => {
     document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
     toast("Payout approved");
   } catch (e) {
-    lastSig = "";
-    signChip.textContent = "Error";
-    signChip.className = "chip bad";
     const msg = humanizeError(e);
-    addActivity("bad", msg.title, msg.body);
-    if (msg.title.startsWith("Vault") && liveCfg) {
-      localStorage.removeItem(VAULT_PREF_KEY);
-      vaultState = "unreachable";
-      refreshVaultUi();
-      showView("home");
-      toast(msg.title);
+    if (msg.title.startsWith("Vault") && liveCfg && policy) {
+      disconnectVault({ quiet: true });
+      toast("Vault offline — checking rules locally");
+      const err = check(policy, intent);
+      if (err) {
+        lastSig = "";
+        signChip.textContent = "Refused";
+        signChip.className = "chip bad";
+        const body = ERRORS[err] ?? err;
+        setStatus("bad", "Payout blocked", body);
+        addActivity(
+          "bad",
+          "Payout blocked",
+          `${fmt(intent.amount.toString())} to ${short(intent.recipient)} · ${body}`
+        );
+      } else {
+        const hex = encodeIntent(intent);
+        lastSig = fakeSig(hex);
+        signChip.textContent = "Approved";
+        signChip.className = "chip ok";
+        setStatus(
+          "ok",
+          "Payout approved offline",
+          `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
+        );
+        addActivity(
+          "ok",
+          "Payout approved offline",
+          `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
+        );
+        toast("Payout approved offline");
+      }
+      document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
     } else {
+      lastSig = "";
+      signChip.textContent = "Error";
+      signChip.className = "chip bad";
       setStatus("bad", msg.title, msg.body, msg.tech);
+      addActivity("bad", msg.title, msg.body);
     }
   } finally {
     trySignBtn.classList.remove("busy");
@@ -881,16 +829,8 @@ document.querySelector('.preset[data-expire="0"]')?.classList.add("active");
 refreshHints();
 
 vaultAction.addEventListener("click", () => {
-  if (vaultState === "live") disconnectVault({ toGate: true });
+  if (vaultState === "live") disconnectVault();
   else void connectVault();
-});
-
-gateConnect.addEventListener("click", () => {
-  void connectVault();
-});
-
-gateOffline.addEventListener("click", () => {
-  continueOffline();
 });
 
 workspace = loadWorkspace();
@@ -901,7 +841,4 @@ if (workspace) {
   showView("landing");
 }
 sync();
-void initVault().then(() => {
-  if (workspace) showView("home");
-  sync();
-});
+void initVault().then(() => sync());
