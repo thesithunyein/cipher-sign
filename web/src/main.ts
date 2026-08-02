@@ -65,7 +65,6 @@ const OUTSIDER = "0x9999999999999999999999999999999999999999" as const;
 let policy: Policy | null = null;
 let lastSig = "";
 let toastTimer = 0;
-let currentView: ViewId = "landing";
 let workspace: Workspace | null = null;
 let vaultState: VaultState = "checking";
 
@@ -84,78 +83,56 @@ const themeToggle = document.querySelector<HTMLButtonElement>("#themeToggle")!;
 const maxHint = document.querySelector<HTMLElement>("#maxHint")!;
 const amountHint = document.querySelector<HTMLElement>("#amountHint")!;
 const scenarioHint = document.querySelector<HTMLElement>("#scenarioHint")!;
-const modeBadge = document.querySelector<HTMLElement>("#modeBadge")!;
 const appNav = document.querySelector<HTMLElement>("#appNav")!;
 const teamChip = document.querySelector<HTMLElement>("#teamChip")!;
 const activityList = document.querySelector<HTMLElement>("#activityList")!;
 const workspaceModal = document.querySelector<HTMLElement>("#workspaceModal")!;
 const teamNameInput = document.querySelector<HTMLInputElement>("#teamName")!;
-const statusDetails = document.querySelector<HTMLDetailsElement>("#statusDetails")!;
-const statusTech = document.querySelector<HTMLElement>("#statusTech")!;
-const modeLabel = document.querySelector<HTMLElement>("#modeLabel")!;
 const vaultAction = document.querySelector<HTMLButtonElement>("#vaultAction")!;
 const liveCfg = liveConfig();
 
-function usingLive(): boolean {
+/** App (Home / Rules / Send / Activity) only after vault Connect. */
+function isAuthed(): boolean {
   return vaultState === "live" && Boolean(liveCfg);
 }
 
-function refreshSessionChrome() {
-  const inApp = Boolean(workspace);
-  teamChip.hidden = !inApp;
-  if (workspace) teamChip.textContent = workspace.team;
-  appNav.hidden = !inApp;
-  vaultControlVisibility();
+function usingLive(): boolean {
+  return isAuthed();
 }
 
-function vaultControlVisibility() {
-  modeBadge.dataset.mode =
-    vaultState === "live"
-      ? "live"
-      : vaultState === "checking"
-        ? "checking"
-        : vaultState === "unreachable"
-          ? "down"
-          : "preview";
-
-  const labels: Record<VaultState, string> = {
-    checking: "Connecting",
-    live: "Live",
-    local: "Offline",
-    unreachable: "Offline",
-    unavailable: "Offline",
-  };
-  modeLabel.textContent = labels[vaultState];
-
-  if (!liveCfg || vaultState === "unavailable") {
-    vaultAction.hidden = true;
-    vaultAction.disabled = true;
-    return;
-  }
+function refreshSessionChrome() {
+  const authed = isAuthed();
+  appNav.hidden = !authed;
+  teamChip.hidden = !(authed && workspace);
+  if (authed && workspace) teamChip.textContent = workspace.team;
 
   vaultAction.hidden = false;
-  vaultAction.disabled = vaultState === "checking";
-  if (vaultState === "live") {
-    vaultAction.textContent = "Disconnect";
-    vaultAction.title = "Use offline mode";
+  vaultAction.disabled = vaultState === "checking" || !liveCfg;
+  if (!liveCfg) {
+    vaultAction.textContent = "Unavailable";
+    vaultAction.title = "Vault is not configured";
   } else if (vaultState === "checking") {
     vaultAction.textContent = "Connecting…";
-    vaultAction.title = "Connecting to vault";
+    vaultAction.title = "Connecting";
+  } else if (authed) {
+    vaultAction.textContent = "Disconnect";
+    vaultAction.title = "Sign out of vault";
   } else {
     vaultAction.textContent = "Connect";
-    vaultAction.title = "Connect live vault (optional)";
+    vaultAction.title = "Connect secure vault";
   }
 }
 
 function refreshVaultUi() {
   refreshSessionChrome();
-  refreshDashboard();
+  if (isAuthed()) refreshDashboard();
 }
 
 async function connectVault(opts?: { quiet?: boolean }) {
   if (!liveCfg) {
     vaultState = "unavailable";
     refreshVaultUi();
+    if (!opts?.quiet) toast("Vault not configured");
     return false;
   }
   localStorage.setItem(VAULT_PREF_KEY, "live");
@@ -163,40 +140,56 @@ async function connectVault(opts?: { quiet?: boolean }) {
   refreshVaultUi();
 
   const ok = await probeVault(liveCfg.baseUrl);
-  if (ok) {
-    vaultState = "live";
+  if (!ok) {
+    localStorage.removeItem(VAULT_PREF_KEY);
+    vaultState = "unreachable";
     refreshVaultUi();
-    if (!opts?.quiet) toast("Vault connected");
-    return true;
+    if (!opts?.quiet) toast("Could not connect — vault offline");
+    showView("landing");
+    return false;
   }
 
-  // Ghostbook-style: stay in the app offline if live is down.
-  localStorage.setItem(VAULT_PREF_KEY, "local");
-  vaultState = "local";
+  vaultState = "live";
   refreshVaultUi();
-  if (!opts?.quiet) toast("Vault offline — using local mode");
-  return false;
+  if (!opts?.quiet) toast("Connected");
+
+  if (!workspace) {
+    openWorkspaceModal();
+    return true;
+  }
+  showView("home");
+  return true;
 }
 
 function disconnectVault(opts?: { quiet?: boolean }) {
-  localStorage.setItem(VAULT_PREF_KEY, "local");
-  vaultState = liveCfg ? "local" : "unavailable";
+  localStorage.removeItem(VAULT_PREF_KEY);
+  vaultState = liveCfg ? "unreachable" : "unavailable";
+  policy = null;
+  lastSig = "";
+  policyChip.textContent = "Not locked";
+  policyChip.className = "chip";
+  signChip.textContent = "Waiting";
+  signChip.className = "chip";
+  statusEl.hidden = true;
   refreshVaultUi();
-  if (!opts?.quiet) toast("Offline mode");
+  if (!opts?.quiet) toast("Disconnected");
+  showView("landing");
 }
 
 async function initVault() {
   if (!liveCfg) {
     vaultState = "unavailable";
     refreshVaultUi();
+    showView("landing");
     return;
   }
   if (localStorage.getItem(VAULT_PREF_KEY) === "live") {
     await connectVault({ quiet: true });
     return;
   }
-  vaultState = "local";
+  vaultState = "unreachable";
   refreshVaultUi();
+  showView("landing");
 }
 
 function toast(message: string) {
@@ -234,9 +227,7 @@ function saveWorkspace(ws: Workspace) {
   workspace = ws;
   localStorage.setItem(WS_KEY, JSON.stringify(ws));
   const homeSub = document.querySelector("#homeSub");
-  if (homeSub) {
-    homeSub.textContent = `${ws.role} · ${ws.team}`;
-  }
+  if (homeSub) homeSub.textContent = ws.team;
   refreshSessionChrome();
 }
 
@@ -280,27 +271,18 @@ function setStatus(
   kind: "idle" | "ok" | "bad",
   title: string,
   body: string,
-  tech?: string
+  _tech?: string
 ) {
-  // Only show outcome banners — never the idle "Ready" strip.
-  if (kind === "idle" || currentView === "landing" || !workspace) {
+  if (kind === "idle" || !isAuthed() || !title || !body) {
     statusEl.hidden = true;
+    copySigBtn.hidden = true;
     return;
   }
   statusEl.hidden = false;
   statusEl.dataset.kind = kind;
   statusTitle.textContent = title;
   statusBody.textContent = body;
-  if (tech) {
-    statusDetails.hidden = false;
-    statusDetails.open = false;
-    statusTech.textContent = tech;
-  } else {
-    statusDetails.hidden = true;
-    statusDetails.open = false;
-    statusTech.textContent = "";
-  }
-  copySigBtn.hidden = !(kind === "ok" && lastSig);
+  copySigBtn.hidden = !(kind === "ok" && Boolean(lastSig));
   statusEl.classList.remove("is-updating");
   void statusEl.offsetWidth;
   statusEl.classList.add("is-updating");
@@ -316,13 +298,12 @@ function addActivity(kind: "ok" | "bad" | "idle", title: string, body: string) {
 }
 
 function sync() {
-  // Offline works like Ghostbook: use the product without Connect.
-  const ready = Boolean(policy) || usingLive();
+  const ready = isAuthed() && Boolean(policy);
   trySignBtn.disabled = !ready;
   tryBadBtn.disabled = !ready;
   tryWrongBtn.disabled = !ready;
-  setPolicyBtn.disabled = false;
-  refreshDashboard();
+  setPolicyBtn.disabled = !isAuthed();
+  if (isAuthed()) refreshDashboard();
 }
 
 function fmt(raw: string) {
@@ -448,26 +429,28 @@ function fakeSig(intentHex: Hex) {
 }
 
 function showView(id: ViewId) {
-  if (!workspace && id !== "landing") {
+  if (id !== "landing" && !isAuthed()) {
+    id = "landing";
+  }
+  if (isAuthed() && id === "landing") {
+    id = workspace ? "home" : "landing";
+  }
+  if (isAuthed() && !workspace && id !== "landing") {
     openWorkspaceModal();
     return;
   }
-  if (workspace && id === "landing") {
-    id = "home";
-  }
 
-  currentView = id;
   document.querySelectorAll<HTMLElement>(".view").forEach((el) => {
     el.hidden = el.id !== `view-${id}`;
   });
   document.querySelectorAll<HTMLElement>(".app-nav-item").forEach((el) => {
-    const nav = el.dataset.nav === "home" ? "home" : el.dataset.nav;
-    el.classList.toggle("active", nav === id || (id === "landing" && nav === "home"));
+    el.classList.toggle("active", el.dataset.nav === id);
   });
   refreshVaultUi();
-  // Clear idle banners when switching pages.
-  if (statusEl.dataset.kind === "idle") statusEl.hidden = true;
-  if (id === "landing") statusEl.hidden = true;
+  if (id === "landing" || statusEl.dataset.kind === "idle") {
+    statusEl.hidden = true;
+    copySigBtn.hidden = true;
+  }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -514,11 +497,17 @@ themeToggle.addEventListener("click", () => {
 });
 
 document.querySelector("#startTeam")?.addEventListener("click", () => {
-  openWorkspaceModal();
+  void connectVault();
 });
 
 document.querySelector("#confirmWorkspace")?.addEventListener("click", () => {
-  const team = teamNameInput.value.trim() || "My team";
+  if (!isAuthed()) {
+    closeWorkspaceModal();
+    showView("landing");
+    toast("Connect first");
+    return;
+  }
+  const team = teamNameInput.value.trim() || "Workspace";
   saveWorkspace({ team, role: "Finance Ops" });
   closeWorkspaceModal();
   showView("home");
@@ -538,10 +527,11 @@ document.querySelectorAll<HTMLElement>("[data-nav]").forEach((el) => {
     const raw = el.dataset.nav;
     if (!raw) return;
     if (el.tagName === "A") e.preventDefault();
-    const id = (raw === "home" && !workspace ? "landing" : raw) as ViewId;
-    if (raw === "home" && workspace) showView("home");
-    else if (raw === "home" && !workspace) showView("landing");
-    else showView(id);
+    if (!isAuthed()) {
+      showView("landing");
+      return;
+    }
+    showView(raw as ViewId);
   });
 });
 
@@ -640,27 +630,15 @@ setPolicyBtn.addEventListener("click", async () => {
     showView("send");
   } catch (e) {
     const msg = humanizeError(e);
-    if (msg.title.startsWith("Vault") && liveCfg) {
+    setStatus("bad", msg.title, msg.body, msg.tech);
+    addActivity("bad", msg.title, msg.body);
+    if (msg.title.startsWith("Vault")) {
+      toast("Connection lost");
       disconnectVault({ quiet: true });
-      policy = next;
-      lastSig = "";
-      policyChip.textContent = "Locked";
-      policyChip.className = "chip ok";
-      signChip.textContent = "Waiting";
-      signChip.className = "chip";
-      sync();
-      const summary = `${next.allowedRecipients.length} approved · limit ${next.maxAmount.toLocaleString("en-US")}`;
-      setStatus("ok", "Rules locked offline", summary);
-      addActivity("ok", "Rules locked offline", summary);
-      toast("Vault offline — locked locally");
-      showView("send");
-    } else {
-      setStatus("bad", msg.title, msg.body, msg.tech);
-      addActivity("bad", msg.title, msg.body);
     }
   } finally {
     setPolicyBtn.classList.remove("busy");
-    setPolicyBtn.disabled = false;
+    setPolicyBtn.disabled = !isAuthed();
     sync();
   }
 });
@@ -761,46 +739,15 @@ trySignBtn.addEventListener("click", async () => {
     document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
     toast("Payout approved");
   } catch (e) {
+    lastSig = "";
+    signChip.textContent = "Error";
+    signChip.className = "chip bad";
     const msg = humanizeError(e);
-    if (msg.title.startsWith("Vault") && liveCfg && policy) {
+    setStatus("bad", msg.title, msg.body, msg.tech);
+    addActivity("bad", msg.title, msg.body);
+    if (msg.title.startsWith("Vault")) {
+      toast("Connection lost");
       disconnectVault({ quiet: true });
-      toast("Vault offline — checking rules locally");
-      const err = check(policy, intent);
-      if (err) {
-        lastSig = "";
-        signChip.textContent = "Refused";
-        signChip.className = "chip bad";
-        const body = ERRORS[err] ?? err;
-        setStatus("bad", "Payout blocked", body);
-        addActivity(
-          "bad",
-          "Payout blocked",
-          `${fmt(intent.amount.toString())} to ${short(intent.recipient)} · ${body}`
-        );
-      } else {
-        const hex = encodeIntent(intent);
-        lastSig = fakeSig(hex);
-        signChip.textContent = "Approved";
-        signChip.className = "chip ok";
-        setStatus(
-          "ok",
-          "Payout approved offline",
-          `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
-        );
-        addActivity(
-          "ok",
-          "Payout approved offline",
-          `${fmt(intent.amount.toString())} to ${short(intent.recipient)}`
-        );
-        toast("Payout approved offline");
-      }
-      document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
-    } else {
-      lastSig = "";
-      signChip.textContent = "Error";
-      signChip.className = "chip bad";
-      setStatus("bad", msg.title, msg.body, msg.tech);
-      addActivity("bad", msg.title, msg.body);
     }
   } finally {
     trySignBtn.classList.remove("busy");
@@ -834,11 +781,11 @@ vaultAction.addEventListener("click", () => {
 });
 
 workspace = loadWorkspace();
-if (workspace) {
-  saveWorkspace(workspace);
-  showView("home");
-} else {
-  showView("landing");
-}
+showView("landing");
 sync();
-void initVault().then(() => sync());
+void initVault().then(() => {
+  if (isAuthed() && workspace) showView("home");
+  else if (isAuthed() && !workspace) openWorkspaceModal();
+  else showView("landing");
+  sync();
+});
