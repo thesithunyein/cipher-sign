@@ -24,29 +24,22 @@ const SCENARIOS: Record<
   string,
   {
     hint: string;
-    allowlist: `0x${string}`[];
     maxAmount: string;
     intentAmount: string;
   }
 > = {
   fassets: {
     hint: "Fee payouts: only approved fee wallets, under a hard limit.",
-    allowlist: [
-      "0x1111111111111111111111111111111111111111",
-      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    ],
     maxAmount: "1000000",
     intentAmount: "500000",
   },
   bot: {
     hint: "Team payroll: automation can pay only the people you approve.",
-    allowlist: ["0x2222222222222222222222222222222222222222"],
     maxAmount: "5000000",
     intentAmount: "2500000",
   },
   ftso: {
     hint: "Rewards: partner rewards go only to the locked payout wallet.",
-    allowlist: ["0x3333333333333333333333333333333333333333"],
     maxAmount: "250000",
     intentAmount: "100000",
   },
@@ -60,7 +53,22 @@ const ERRORS: Record<string, string> = {
   "amount exceeds policy maxAmount": "Blocked: that amount is over your spending limit.",
 };
 
-const OUTSIDER = "0x9999999999999999999999999999999999999999" as const;
+/** Address guaranteed not on the current allowlist (for safety-limit tests only). */
+function outsiderAddress(): `0x${string}` {
+  const allowed = new Set(
+    parseAllowlist(
+      document.querySelector<HTMLInputElement>("#allowlist")?.value || ""
+    ).map((a) => a.toLowerCase())
+  );
+  const candidates = [
+    "0xffffffffffffffffffffffffffffffffffffffff",
+    "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  ] as const;
+  for (const c of candidates) {
+    if (!allowed.has(c)) return c;
+  }
+  return "0xdead000000000000000000000000000000000000";
+}
 
 let policy: Policy | null = null;
 let lastSig = "";
@@ -468,10 +476,7 @@ function closeWorkspaceModal() {
 function applyScenario(id: string) {
   const s = SCENARIOS[id];
   if (!s) return;
-  document.querySelector<HTMLInputElement>("#allowlist")!.value =
-    s.allowlist.join(", ");
-  document.querySelector<HTMLInputElement>("#intentRecipient")!.value =
-    s.allowlist[0];
+  // Templates only suggest limits — never inject fake demo addresses.
   document.querySelector<HTMLInputElement>("#maxAmount")!.value = s.maxAmount;
   document.querySelector<HTMLInputElement>("#intentAmount")!.value =
     s.intentAmount;
@@ -768,7 +773,7 @@ tryBadBtn.addEventListener("click", () => {
 
 tryWrongBtn.addEventListener("click", () => {
   document.querySelector<HTMLInputElement>("#intentRecipient")!.value =
-    OUTSIDER;
+    outsiderAddress();
   trySignBtn.click();
 });
 
