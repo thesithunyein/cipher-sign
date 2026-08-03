@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/fcc/:path*",
-      "destination": "https://examinations-domains-proof-cooler.trycloudflare.com/:path*"
+      "destination": "https://moment-forecasts-postage-strategy.trycloudflare.com/:path*"
     }
   ]
 }
