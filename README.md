@@ -206,6 +206,66 @@ Operator runbook: [docs/SETUP.md](docs/SETUP.md) · [docs/PRODUCTION.md](docs/PR
 
 ---
 
+## Project structure
+
+```text
+cipher-sign/
+├── api/                          # Vercel serverless — sponsored InstructionSender txs
+│   └── instruct.js               # updateKey · setPolicy · sign (operator pays C2FLR)
+├── web/                          # Product UI
+│   ├── public/                   # Brand + atmosphere assets
+│   ├── scripts/                  # Operator helpers (set-extension-id)
+│   └── src/
+│       ├── main.ts               # Connect · Lock · Approve · proof UX
+│       ├── chain.ts              # Coston2 + InstructionSender ABI
+│       ├── fcc.ts                # /fcc probe + instruction result polling
+│       └── verify.ts             # ECDSA recover / approval verify
+├── tee/                          # Flare FCC vault stack
+│   ├── contracts/                # InstructionSender (diamond-compatible)
+│   ├── typescript/               # CipherSign TEE extension (policy handlers)
+│   │   └── src/app/handlers.ts   # KEY/UPDATE · SET_POLICY · SIGN
+│   ├── go/
+│   │   ├── internal/             # Go extension runtime
+│   │   └── tools/                # Deploy, register, diagnose, e2e test
+│   ├── proxy/                    # ext-proxy Docker image
+│   ├── scripts/                  # pre-build · post-build · compose helpers
+│   ├── config/coston2/           # FlareTeeManager deployed addresses
+│   └── docker-compose.yaml       # redis + ext-proxy + extension-tee
+├── scripts/                      # Repo ops (Vercel sponsor env)
+├── docs/                         # Product, architecture, setup, production
+├── vercel.json                   # Web build + /fcc rewrite to live TEE tunnel
+└── README.md
+```
+
+Product path: **`web/` + `api/` + `tee/typescript/` + `tee/contracts/`**.  
+`tee/go/tools` is for deploy/register against FlareTeeManager.
+
+---
+
+## Roadmap
+
+### Now — live on Coston2
+- [x] Policy-gated vault (allowlist · max · expiry) inside Flare TEE  
+- [x] On-chain `updateKey` / `setPolicy` / `sign` via InstructionSender  
+- [x] Operator-sponsored gas ($0 for end users)  
+- [x] Fee / payroll / rewards templates + explorer proof + ECDSA verify  
+- [x] Production TEE registration on FlareTeeManager  
+
+### Next — production hardening
+- [ ] Persistent vault key / policy across TEE restarts (sealed storage)  
+- [ ] Stable TEE endpoint (named tunnel or fixed host — no ephemeral URL)  
+- [ ] Hardware Confidential Space attestation path (`SIMULATED_TEE=false`)  
+- [ ] Multi-operator roles (locker vs approver) with audit trail  
+- [ ] Webhook / bot API for keeper and fee automation  
+
+### Later — settlement & scale
+- [ ] Mainnet Flare deployment  
+- [ ] Optional on-chain settlement after approved signature  
+- [ ] Org workspaces, spend reports, and exportable compliance logs  
+- [ ] Policy templates marketplace (FAssets fees, FTSO forwarders, payroll packs)  
+
+---
+
 ## License
 
 MIT — [LICENSE](LICENSE). Upstream FCC components © Flare Foundation.
