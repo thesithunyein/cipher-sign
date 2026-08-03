@@ -324,17 +324,19 @@ main {
 
 .hero {
   margin-bottom: 2rem;
-  max-width: 40rem;
+  max-width: 36rem;
 }
 
 .hero h1 {
   margin: 0 0 0.85rem;
+  max-width: 11ch;
   font-family: Syne, Manrope, sans-serif;
-  font-size: clamp(2.35rem, 6.2vw, 3.55rem);
+  font-size: clamp(2.5rem, 7vw, 3.75rem);
   font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 0.98;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
   color: #fff;
+  text-wrap: balance;
 }
 
 [data-theme="light"] .hero h1 {
