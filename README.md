@@ -10,9 +10,20 @@
 </p>
 
 <p align="center">
-  <a href="https://cipher-sign.vercel.app"><strong>cipher-sign.vercel.app</strong></a>
+  <a href="https://cipher-sign.vercel.app"><img src="https://img.shields.io/badge/Live-cipher--sign.vercel.app-0B0B12?style=for-the-badge&labelColor=1a1a24&color=30d158" alt="Live app" /></a>
+  <a href="https://coston2-explorer.flare.network/address/0x23E9d227a2b1741b8e23915D7F7f592f5FEDe36A"><img src="https://img.shields.io/badge/Network-Coston2%20%28114%29-0B0B12?style=for-the-badge&labelColor=1a1a24&color=e84142" alt="Coston2" /></a>
+  <img src="https://img.shields.io/badge/TEE-Flare%20FCC-0B0B12?style=for-the-badge&labelColor=1a1a24&color=5b8def" alt="Flare FCC" />
+  <img src="https://img.shields.io/badge/Gas-Sponsored%20%28%240%29-0B0B12?style=for-the-badge&labelColor=1a1a24&color=f5a524" alt="Sponsored gas" />
+  <img src="https://img.shields.io/badge/Tests-29%2F29-0B0B12?style=for-the-badge&labelColor=1a1a24&color=30d158" alt="Tests" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0B0B12?style=for-the-badge&labelColor=1a1a24&color=8e8e93" alt="MIT" /></a>
+</p>
+
+<p align="center">
+  <a href="https://cipher-sign.vercel.app"><strong>Open live app</strong></a>
   ·
-  <a href="https://coston2-explorer.flare.network/address/0x23E9d227a2b1741b8e23915D7F7f592f5FEDe36A">Coston2 contract</a>
+  <a href="https://coston2-explorer.flare.network/address/0x23E9d227a2b1741b8e23915D7F7f592f5FEDe36A">InstructionSender</a>
+  ·
+  <a href="https://coston2-explorer.flare.network/address/0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE">FlareTeeManager</a>
 </p>
 
 ---
@@ -52,15 +63,103 @@ Gas for Lock / Approve is **operator-sponsored** on Coston2 (you pay $0). Explor
 
 ---
 
-## How it works
+## Architecture
 
-```text
-Browser  →  InstructionSender (Coston2)
-         →  FlareTeeManager diamond
-         →  CipherSign TEE extension
-              UPDATE   load vault key (ECIES)
-              SET_POLICY   lock allowlist · max · expiry
-              SIGN         ECDSA only if intent passes
+End-to-end path from the product UI to the attested vault:
+
+```mermaid
+flowchart TB
+  subgraph Users["Ops team"]
+    OPS[Finance / ops operator]
+  end
+
+  subgraph Product["CipherSign product"]
+    UI["Web vault<br/>cipher-sign.vercel.app"]
+    API["Sponsor API<br/>/api/instruct"]
+    UI -->|Lock / Approve| API
+  end
+
+  subgraph Coston2["Flare Coston2 · chain 114"]
+    SENDER["InstructionSender<br/>0x23E9…e36A"]
+    DIAMOND["FlareTeeManager diamond<br/>0x1a9C…18aE"]
+    API -->|updateKey · setPolicy · sign<br/>operator pays C2FLR| SENDER
+    SENDER -->|getRandomTeeIds + sendInstructions| DIAMOND
+  end
+
+  subgraph FCC["Flare Confidential Compute"]
+    PROXY["ext-proxy · public tunnel"]
+    TEE["CipherSign TEE extension"]
+    DIAMOND -.->|route to production machine| PROXY
+    UI -.->|/fcc → /info · poll results| PROXY
+    PROXY --> TEE
+
+    subgraph Enclave["Enclave memory"]
+      UPD["KEY / UPDATE<br/>ECIES → vault key"]
+      POL["KEY / SET_POLICY<br/>allowlist · max · expiry"]
+      SIGN["KEY / SIGN<br/>intent check + ECDSA"]
+    end
+
+    TEE --> UPD
+    TEE --> POL
+    TEE --> SIGN
+  end
+
+  OPS --> UI
+  SIGN -->|policy OK| OK["ECDSA signature<br/>+ explorer proof"]
+  SIGN -->|overspend / wrong addr / expired| NO["Reject — key unused"]
+```
+
+### Policy gate (inside the enclave)
+
+```mermaid
+flowchart LR
+  I[SIGN intent] --> K{Key loaded?}
+  K -->|no| R1[Reject]
+  K -->|yes| P{Policy locked?}
+  P -->|no| R2[Reject]
+  P -->|yes| E{Expired?}
+  E -->|yes| R3[Reject]
+  E -->|no| A{Recipient<br/>allowlisted?}
+  A -->|no| R4[Reject]
+  A -->|yes| M{Amount ≤ max?}
+  M -->|no| R5[Reject]
+  M -->|yes| S[ECDSA sign]
+```
+
+### Lock → Approve sequence
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Ops as Operator
+  participant App as CipherSign UI
+  participant API as Sponsor API
+  participant Chain as InstructionSender
+  participant TEE as CipherSign TEE
+
+  Ops->>App: Connect vault
+  App->>TEE: GET /info (reachability)
+
+  Ops->>App: Lock rules
+  App->>API: updateKey (if needed)
+  API->>Chain: InstructionSender.updateKey
+  Chain->>TEE: KEY / UPDATE
+  TEE-->>App: key loaded
+
+  App->>API: setPolicy(allowlist, max, expiry)
+  API->>Chain: InstructionSender.setPolicy
+  Chain->>TEE: KEY / SET_POLICY
+  TEE-->>App: policy locked
+
+  Ops->>App: Approve payout
+  App->>API: sign(intent)
+  API->>Chain: InstructionSender.sign
+  Chain->>TEE: KEY / SIGN
+  alt Intent passes policy
+    TEE-->>App: ECDSA signature + explorer tx
+  else Over limit / wrong person / expired
+    TEE-->>App: reject — no signature
+  end
 ```
 
 Policy and key live in enclave memory. Restarting the TEE clears the key; the live app reloads it via sponsored `updateKey` before Lock / Approve.
