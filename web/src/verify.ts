@@ -115,8 +115,8 @@ export async function verifyApproval(
     recovered,
     matchesVault: matches,
     detail: matches
-      ? `Verified — signed by vault ${recovered}`
-      : `Fail — recovered ${recovered}, expected vault ${getAddress(expectedVault)}`,
+      ? `Verified. Signed by vault ${recovered}`
+      : `Fail. Recovered ${recovered}, expected vault ${getAddress(expectedVault)}`,
     parsed,
   };
 }

@@ -45,12 +45,12 @@ const SCENARIOS: Record<
   }
 > = {
   fees: {
-    hint: "Fee wallets only — hard cap on every payout.",
+    hint: "Fee wallets only. Hard cap on every payout.",
     maxAmount: "1000000",
     intentAmount: "500000",
   },
   payroll: {
-    hint: "Approved teammates only — never above the payroll cap.",
+    hint: "Approved teammates only. Never above the payroll cap.",
     maxAmount: "5000000",
     intentAmount: "2500000",
   },
@@ -155,7 +155,7 @@ async function ensureVaultKeyLoaded(): Promise<void> {
   setStatus(
     "ok",
     "Loading vault key",
-    "InstructionSender.updateKey — gas sponsored (you pay $0)…"
+    "InstructionSender.updateKey. Gas sponsored ($0 for you)…"
   );
   const onchain = await sendUpdateKeyOnchain();
   setStatus(
@@ -224,7 +224,7 @@ async function connectVault(opts?: { quiet?: boolean }) {
     vaultState = "unreachable";
     vaultAddress = null;
     refreshVaultUi();
-    if (!opts?.quiet) toast("Could not connect — vault offline");
+    if (!opts?.quiet) toast("Could not connect. Vault offline");
     showView("landing");
     return false;
   }
@@ -349,7 +349,7 @@ function humanizeError(err: unknown): {
   ) {
     return {
       title: "Vault unreachable",
-      body: "The live vault is offline. Reconnect when it is back — CipherSign does not approve payouts offline.",
+      body: "The live vault is offline. Reconnect when it is back. CipherSign does not approve payouts offline.",
       tech,
     };
   }
@@ -1019,7 +1019,7 @@ setPolicyBtn.addEventListener("click", async () => {
     setStatus(
       "ok",
       "Submitting on-chain",
-      "InstructionSender.setPolicy — gas sponsored (you pay $0)…"
+      "InstructionSender.setPolicy. Gas sponsored ($0 for you)…"
     );
     const onchain = await sendSetPolicyOnchain({
       policyBytes: encodePolicy(next),
@@ -1100,7 +1100,7 @@ trySignBtn.addEventListener("click", async () => {
     setStatus(
       "ok",
       "Submitting on-chain",
-      "InstructionSender.sign — gas sponsored (you pay $0)…"
+      "InstructionSender.sign. Gas sponsored ($0 for you)…"
     );
     const onchain = await sendSignOnchain({
       intentBytes: encodeIntent(intent),
@@ -1162,7 +1162,7 @@ trySignBtn.addEventListener("click", async () => {
     document.querySelector('#checklist li[data-step="3"]')?.classList.add("done");
     toast(
       verifiedOk
-        ? "Approved on-chain — open explorer link in proof"
+        ? "Approved on-chain. Open the explorer link in proof"
         : "Tx sent but payload failed verify"
     );
   } catch (e) {

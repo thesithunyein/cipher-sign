@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta
       name="description"
-      content="CipherSign is a payout vault for finance and ops. Lock approved payees and a spending limit — enforced in a Flare TEE before any signature."
+      content="CipherSign is a payout vault for finance and ops. Lock approved payees and a spending limit. Rules are enforced in a Flare TEE before any signature."
     />
     <meta name="theme-color" content="#eef0f8" />
     <meta name="color-scheme" content="light dark" />
-    <title>CipherSign — Safe payouts with hard limits</title>
+    <title>CipherSign · Safe payouts with hard limits</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/logo-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -78,7 +78,7 @@
             <button type="button" class="btn" id="startTeam">Get started</button>
             <a class="btn quiet" href="#faq">How it works</a>
           </div>
-          <p class="trust-line">On Flare Coston2 · network fees covered for you</p>
+          <p class="trust-line">Coston2 live vault · operator TEE required · fees covered</p>
         </div>
 
         <div class="glance reveal" style="--d: 2" id="how" aria-label="How CipherSign works">
@@ -108,16 +108,24 @@
               <p>Finance and ops teams that send fees, payroll, or rewards and cannot afford a wrong address or overspend.</p>
             </details>
             <details class="faq-item">
+              <summary>What is live today?</summary>
+              <p>
+                A working Coston2 vault: Lock and Approve on-chain, policy checked in the TEE,
+                explorer proof in-app. The operator TEE must be online. This is a live control
+                plane, not a set-and-forget mainnet treasury yet.
+              </p>
+            </details>
+            <details class="faq-item">
               <summary>What does Get started do?</summary>
               <p>
-                Connects your CipherSign vault. Lock and Approve still run on-chain;
-                gas is paid by the operator sponsor so you are not asked for C2FLR.
+                Connects your CipherSign vault. Lock and Approve still run on-chain.
+                Gas is paid by the operator sponsor so you are not asked for C2FLR.
               </p>
             </details>
             <details class="faq-item">
               <summary>Do I pay network fees?</summary>
               <p>
-                No on the product path — Lock and Approve are gas-sponsored.
+                No on the product path. Lock and Approve are gas-sponsored.
                 C2FLR from the Flare faucet is only needed if you run operator tooling yourself.
               </p>
             </details>
@@ -131,7 +139,7 @@
             </details>
             <details class="faq-item">
               <summary>Is this a trading app?</summary>
-              <p>No. CipherSign is payout control only — not swaps or trading.</p>
+              <p>No. CipherSign is payout control only, not swaps or trading.</p>
             </details>
             <details class="faq-item">
               <summary>How do I know an approval is real?</summary>
@@ -200,7 +208,7 @@
             <button type="button" class="chip-btn" data-scenario="rewards">Rewards</button>
           </div>
           <p class="scenario-hint" id="scenarioHint">
-            Fee wallets only — hard cap on every payout.
+            Fee wallets only. Hard cap on every payout.
           </p>
 
           <label>
