@@ -244,25 +244,11 @@ Product path: **`web/` + `api/` + `tee/typescript/` + `tee/contracts/`**.
 
 ## Roadmap
 
-### Now — live on Coston2
-- [x] Policy-gated vault (allowlist · max · expiry) inside Flare TEE  
-- [x] On-chain `updateKey` / `setPolicy` / `sign` via InstructionSender  
-- [x] Operator-sponsored gas ($0 for end users)  
-- [x] Fee / payroll / rewards templates + explorer proof + ECDSA verify  
-- [x] Production TEE registration on FlareTeeManager  
+**Shipped.** Live Coston2 vault: policy lives in the TEE, Lock/Approve are on-chain, gas is sponsored, proofs verify in-app.
 
-### Next — production hardening
-- [ ] Persistent vault key / policy across TEE restarts (sealed storage)  
-- [ ] Stable TEE endpoint (named tunnel or fixed host — no ephemeral URL)  
-- [ ] Hardware Confidential Space attestation path (`SIMULATED_TEE=false`)  
-- [ ] Multi-operator roles (locker vs approver) with audit trail  
-- [ ] Webhook / bot API for keeper and fee automation  
+**Next — make it operational.** Survive TEE restarts without re-seeding keys; replace ephemeral tunnels with a fixed FCC endpoint; run under hardware attestation so “live” means Confidential Space, not a laptop. Until then, CipherSign is a working control plane — not yet a set-and-forget treasury rail.
 
-### Later — settlement & scale
-- [ ] Mainnet Flare deployment  
-- [ ] Optional on-chain settlement after approved signature  
-- [ ] Org workspaces, spend reports, and exportable compliance logs  
-- [ ] Policy templates marketplace (FAssets fees, FTSO forwarders, payroll packs)  
+**Then — close the money loop.** Mainnet Flare, optional settle-after-sign, and a thin automation API so fee bots and payroll jobs call the same gate humans use. Everything else (dashboards, template packs) only matters after the vault is durable and attested.
 
 ---
 
