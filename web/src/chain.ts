@@ -317,13 +317,13 @@ export async function ensureExtensionIdOnchain(opts: {
       const need = (Number(cost) / 1e18).toFixed(3);
       const have = (Number(balance) / 1e18).toFixed(3);
       throw new Error(
-        `Activate needs ~${need} C2FLR for the one-time registry scan, but this wallet only has ${have} C2FLR. Fund from https://faucet.flare.network/ then retry — or run: node web/scripts/set-extension-id.mjs`
+        `Activate needs ~${need} C2FLR for the one-time registry scan, but this wallet only has ${have} C2FLR. Fund from https://faucet.flare.network/ then retry, or run: node web/scripts/set-extension-id.mjs`
       );
     }
 
     // Human-readable cost warning (MetaMask may show red “high fee” — that is expected).
     console.info(
-      `[CipherSign] setExtensionId scan ≈ ${(Number(cost) / 1e18).toFixed(3)} C2FLR — confirm in MetaMask even if fee is red`
+      `[CipherSign] setExtensionId scan ≈ ${(Number(cost) / 1e18).toFixed(3)} C2FLR. Confirm in MetaMask even if fee is red`
     );
 
     const hash = await opts.walletClient.writeContract(request);
@@ -355,7 +355,7 @@ async function finishExtensionId(
   });
   if (after === 0n) {
     throw new Error(
-      "setExtensionId mined but extension id is still 0 — contract may not be registered as this extension’s InstructionSender."
+      "setExtensionId mined but extension id is still 0. Contract may not be registered as this extension’s InstructionSender."
     );
   }
   return {

@@ -501,8 +501,8 @@ function buildProofReceipt(opts: {
   <p class="${opts.verify.startsWith("Verified") || opts.verify.startsWith("Recovered") ? "ok" : "bad"}">${esc(opts.verify)}</p>
   <h1>${esc(opts.summary)}</h1>
   <p class="muted">On-chain InstructionSender.sign on Flare Coston2 + policy-gated TEE signature. Explorer tx is the public confirmation; ECDSA recover checks the vault key.</p>
-  <div class="row"><span class="label">Coston2 tx</span><div class="box mono"><a href="${esc(opts.explorerTx)}" target="_blank" rel="noreferrer">${esc(opts.txHash || opts.explorerTx || "—")}</a></div></div>
-  <div class="row"><span class="label">Vault signer (recovered)</span><div class="box mono">${esc(opts.signer || "—")}</div></div>
+  <div class="row"><span class="label">Coston2 tx</span><div class="box mono"><a href="${esc(opts.explorerTx)}" target="_blank" rel="noreferrer">${esc(opts.txHash || opts.explorerTx || "-")}</a></div></div>
+  <div class="row"><span class="label">Vault signer (recovered)</span><div class="box mono">${esc(opts.signer || "-")}</div></div>
   <div class="row"><span class="label">Expected vault</span><div class="box mono">${esc(opts.expectedVault || "not reported by /state yet")}</div></div>
   <div class="row"><span class="label">Proof ID</span><div class="box mono">${esc(opts.proofId)}</div></div>
   <div class="row"><span class="label">Approved at (UTC)</span><div class="box mono">${esc(when)}</div></div>
