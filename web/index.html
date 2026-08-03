@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta
       name="description"
-      content="CipherSign helps finance and ops teams stop payout mistakes. Set who can get paid and a spending limit. Overpay or wrong person gets blocked. Secured on Flare."
+      content="Stop payout mistakes before money leaves. CipherSign locks who can get paid and how much — enforced in a Flare TEE before any signature."
     />
-    <meta name="theme-color" content="#07070c" />
-    <meta name="color-scheme" content="dark light" />
-    <title>CipherSign — Stop payout mistakes</title>
+    <meta name="theme-color" content="#eef0f8" />
+    <meta name="color-scheme" content="light dark" />
+    <title>CipherSign — Stop payout mistakes before money leaves</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/logo-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -21,8 +21,8 @@
     <script>
       (() => {
         const saved = localStorage.getItem("cs-theme");
-        // Soft atmosphere background reads best in light; keep explicit dark choice.
-        const theme = saved === "light" || saved === "dark" ? saved : "light";
+        // Product default is light; only dark if the user chose it.
+        const theme = saved === "dark" ? "dark" : "light";
         document.documentElement.dataset.theme = theme;
         const meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute("content", theme === "light" ? "#eef0f8" : "#0a0b12");
@@ -68,77 +68,76 @@
     <main>
       <section class="view" id="view-landing">
         <div class="hero reveal" style="--d: 1">
-          <p class="eyebrow">For finance &amp; ops teams</p>
+          <p class="eyebrow">Payout control for finance &amp; ops</p>
           <h1>Stop payout mistakes<br />before money leaves.</h1>
           <p class="lede">
-            One place to set <strong>who</strong> can get paid and a
-            <strong>spending limit</strong>. Wrong person or overpay gets blocked.
+            Lock <strong>who</strong> can get paid and a hard <strong>spending limit</strong>.
+            The vault blocks overpay and wrong-person payouts before it signs.
           </p>
           <div class="cta-row">
-            <button type="button" class="btn" id="startTeam">Connect</button>
-            <a class="btn quiet" href="#faq">Q&amp;A</a>
+            <button type="button" class="btn" id="startTeam">Get started</button>
+            <a class="btn quiet" href="#faq">How it works</a>
           </div>
-          <p class="trust-line">Coston2 on-chain · gas sponsored for you</p>
+          <p class="trust-line">On Flare Coston2 · network fees covered for you</p>
         </div>
 
         <div class="glance reveal" style="--d: 2" id="how" aria-label="How CipherSign works">
           <article>
             <span class="glance-num">1</span>
             <h3>Connect</h3>
-            <p>Open your payout workspace.</p>
+            <p>Open your team vault.</p>
           </article>
           <article>
             <span class="glance-num">2</span>
-            <h3>Set rules</h3>
-            <p>Approved people + spending limit.</p>
+            <h3>Lock rules</h3>
+            <p>Approved payees and a spending cap.</p>
           </article>
           <article>
             <span class="glance-num">3</span>
-            <h3>Send</h3>
-            <p>Good payouts pass. Bad ones block.</p>
+            <h3>Approve</h3>
+            <p>Valid payouts pass. The rest stop here.</p>
           </article>
         </div>
 
         <div class="faq reveal" style="--d: 3" id="faq">
-          <h2>Q&amp;A</h2>
-          <p class="faq-lead">Optional — tap a question if you need it.</p>
+          <h2>Questions</h2>
+          <p class="faq-lead">Short answers for operators.</p>
           <div class="faq-list">
             <details class="faq-item">
               <summary>Who is this for?</summary>
-              <p>Teams that send fees, payroll, or rewards and need to stop overpay / wrong-person mistakes.</p>
+              <p>Finance and ops teams that send fees, payroll, or rewards and cannot afford a wrong address or overspend.</p>
             </details>
             <details class="faq-item">
-              <summary>What does Connect do?</summary>
+              <summary>What does Get started do?</summary>
               <p>
-                Opens your CipherSign vault. Lock and Approve still go on-chain via
-                InstructionSender — network gas is paid by the operator sponsor, not you.
+                Connects your CipherSign vault. Lock and Approve still run on-chain;
+                gas is paid by the operator sponsor so you are not asked for C2FLR.
               </p>
             </details>
             <details class="faq-item">
               <summary>Do I pay network fees?</summary>
               <p>
-                No — the product path sponsors Coston2 gas. You should not need MetaMask
-                C2FLR for Lock / Approve. (C2FLR itself is free testnet from the Flare faucet.)
+                No on the product path — Lock and Approve are gas-sponsored.
+                C2FLR from the Flare faucet is only needed if you run operator tooling yourself.
               </p>
             </details>
             <details class="faq-item">
-              <summary>Where do I get wallet addresses?</summary>
-              <p>From MetaMask (or any wallet): copy the account address, paste into Rules.</p>
+              <summary>Where do payee addresses come from?</summary>
+              <p>Copy wallet addresses from MetaMask (or any wallet) and paste them under Rules.</p>
             </details>
             <details class="faq-item">
               <summary>What gets blocked?</summary>
-              <p>Anything over your limit, or paid to someone not on your approved list.</p>
+              <p>Amounts over your limit, and payments to anyone not on the approved list.</p>
             </details>
             <details class="faq-item">
               <summary>Is this a trading app?</summary>
-              <p>No — payout control only. Not for swapping or trading tokens.</p>
+              <p>No. CipherSign is payout control only — not swaps or trading.</p>
             </details>
             <details class="faq-item">
               <summary>How do I know an approval is real?</summary>
               <p>
-                Approve sends an on-chain InstructionSender.sign tx on Coston2 (explorer
-                link). The TEE then returns a signature; the app recovers the vault
-                signer and matches it. No explorer tx = not a real product approval.
+                Every approval includes a Coston2 explorer transaction plus a vault signature
+                the app recovers and checks. No on-chain tx means it did not clear the vault.
               </p>
             </details>
           </div>
@@ -148,33 +147,33 @@
       <section class="view" id="view-home" hidden>
         <div class="page-head">
           <h1>Home</h1>
-          <p id="homeSub">Your payout workspace — start with Rules.</p>
+          <p id="homeSub">Start with Rules, then approve payouts from Send.</p>
         </div>
 
         <div class="dash-grid">
           <article class="dash-card">
             <span class="dash-label">Rules</span>
             <strong id="dashRules">Not locked</strong>
-            <span id="dashRulesMeta">Set who can get paid and your limit</span>
+            <span id="dashRulesMeta">Who can get paid · spending limit</span>
           </article>
           <article class="dash-card">
             <span class="dash-label">Spending limit</span>
             <strong id="dashLimit">-</strong>
-            <span>Maximum for any single payout</span>
+            <span>Max per payout</span>
           </article>
           <article class="dash-card">
-            <span class="dash-label">Approved people</span>
+            <span class="dash-label">Approved payees</span>
             <strong id="dashPeople">0</strong>
-            <span>Can receive payouts</span>
+            <span>Allowed recipients</span>
           </article>
         </div>
 
         <div class="panel checklist-panel">
-          <h2>Do this next</h2>
+          <h2>Next steps</h2>
           <ol class="checklist" id="checklist">
-            <li data-step="1">Go to Rules — add payees and a limit</li>
-            <li data-step="2">Lock rules</li>
-            <li data-step="3">Go to Send — approve a payout</li>
+            <li data-step="1">Add payees and a limit in Rules</li>
+            <li data-step="2">Lock rules on-chain</li>
+            <li data-step="3">Approve a payout from Send</li>
           </ol>
           <div class="cta-row">
             <button type="button" class="btn" data-nav="rules" id="dashRulesBtn">Go to Rules</button>
@@ -186,12 +185,12 @@
       <section class="view" id="view-rules" hidden>
         <div class="page-head">
           <h1>Rules</h1>
-          <p>Add payees, set a limit, then Lock. Nothing is enforced until you lock.</p>
+          <p>Choose payees and a limit. Nothing is enforced until you lock.</p>
         </div>
 
         <div class="panel" id="policyPanel">
           <div class="panel-top">
-            <h2>Rules</h2>
+            <h2>Policy</h2>
             <span class="chip" id="policyChip">Not locked</span>
           </div>
 
@@ -201,7 +200,7 @@
             <button type="button" class="chip-btn" data-scenario="rewards">Rewards</button>
           </div>
           <p class="scenario-hint" id="scenarioHint">
-            Fee payouts: approved fee wallets only, under a hard spending limit.
+            Fee wallets only — hard cap on every payout.
           </p>
 
           <label>
@@ -242,12 +241,12 @@
       <section class="view" id="view-send" hidden>
         <div class="page-head">
           <h1>Send</h1>
-          <p>Ask the vault to approve a payout. Breaks the rules → blocked.</p>
+          <p>Request approval from the vault. Break the rules and it will refuse.</p>
         </div>
 
         <div class="panel" id="requestPanel">
           <div class="panel-top">
-            <h2>Payment</h2>
+            <h2>Payout</h2>
             <span class="chip" id="signChip">Waiting</span>
           </div>
 
@@ -293,7 +292,7 @@
             <span class="chip" id="proofChip">Checking…</span>
           </div>
           <p class="proof-explain" id="proofExplain">
-            On-chain InstructionSender tx + ECDSA recover of the vault signer.
+            On-chain transaction plus vault signature recovery.
           </p>
           <label>
             Coston2 transaction
@@ -373,7 +372,7 @@
     <div class="modal" id="workspaceModal" hidden>
       <div class="modal-card" role="dialog" aria-labelledby="wsTitle" aria-modal="true">
         <h2 id="wsTitle">Name your workspace</h2>
-        <p>One name for your team. Next you will set Rules.</p>
+        <p>Used on Home. Next you will lock payout rules.</p>
         <label>
           Workspace name
           <input id="teamName" type="text" maxlength="40" placeholder="e.g. Acme Finance" value="" autocomplete="organization" />

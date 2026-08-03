@@ -45,17 +45,17 @@ const SCENARIOS: Record<
   }
 > = {
   fees: {
-    hint: "Fee payouts: approved fee wallets only, under a hard spending limit.",
+    hint: "Fee wallets only — hard cap on every payout.",
     maxAmount: "1000000",
     intentAmount: "500000",
   },
   payroll: {
-    hint: "Team payroll: pay only approved people, never above the limit.",
+    hint: "Approved teammates only — never above the payroll cap.",
     maxAmount: "5000000",
     intentAmount: "2500000",
   },
   rewards: {
-    hint: "Rewards: partner rewards go only to locked payout wallets.",
+    hint: "Partner rewards only to wallets you lock in advance.",
     maxAmount: "250000",
     intentAmount: "100000",
   },
@@ -240,7 +240,7 @@ async function connectVault(opts?: { quiet?: boolean }) {
         : attestationKind === "simulated"
           ? "simulated TEE"
           : "TEE";
-    toast(`Connected · ${tee} · gas sponsored ($0 for you)`);
+    toast(`Connected · ${tee} · fees covered`);
   }
 
   if (!workspace) {
