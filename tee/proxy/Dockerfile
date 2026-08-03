@@ -1,8 +1,8 @@
 # Self-contained build of tee-proxy. Clones both tee-proxy and tee-node
 # (its dependency) from GitHub so no local sibling repos are needed.
 
-ARG TEE_PROXY_VERSION=develop
-ARG TEE_NODE_VERSION=develop
+ARG TEE_PROXY_VERSION=v0.0.18
+ARG TEE_NODE_VERSION=v0.0.21
 
 FROM golang:1.25.1-alpine AS builder
 

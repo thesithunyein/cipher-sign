@@ -26,10 +26,24 @@ tee/python/
 tee/skills/
 
 # Foundry cache/artifacts
+tee/cache/
+tee/out/
 tee/contract/cache/
 tee/contract/out/
+
+# Local TEE backups / scratch (never ship)
+tee/go/tools.bak/
+tee/go/tmp-sigcheck/
+tee/config/deploy.log
+tee/config/register-tee.state
+tee/scripts/_run-*.sh
+
+# Hackathon timing notes (not product docs)
+docs/DEMO_TIMING.md
 
 # Web
 web/node_modules/
 web/dist/
 web/src/assets/
+.vercel
+.env*

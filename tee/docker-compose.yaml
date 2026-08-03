@@ -25,6 +25,9 @@ services:
     build:
       context: proxy/
       dockerfile: Dockerfile
+      args:
+        TEE_PROXY_VERSION: ${TEE_PROXY_VERSION:-v0.0.18}
+        TEE_NODE_VERSION: ${TEE_NODE_VERSION:-v0.0.21}
     volumes:
       - ./config/proxy/extension_proxy.toml:/app/config/config.toml:ro
     environment:
@@ -48,6 +51,8 @@ services:
     build:
       context: ${LANGUAGE:-go}/
       dockerfile: Dockerfile
+      args:
+        TEE_NODE_VERSION: ${TEE_NODE_VERSION:-v0.0.21}
     env_file:
       - .env
       - path: ./config/extension.env

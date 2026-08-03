@@ -1,4 +1,4 @@
-ARG TEE_NODE_VERSION=develop
+ARG TEE_NODE_VERSION=v0.0.21
 
 FROM golang:1.25.1-alpine AS node-builder
 

@@ -40,14 +40,21 @@ export const instructionSenderAbi = [
     name: "setPolicy",
     stateMutability: "payable",
     inputs: [{ name: "_policy", type: "bytes" }],
-    outputs: [{ name: "", type: "bytes32" }],
+    outputs: [],
   },
   {
     type: "function",
     name: "sign",
     stateMutability: "payable",
     inputs: [{ name: "_message", type: "bytes" }],
-    outputs: [{ name: "", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "updateKey",
+    stateMutability: "payable",
+    inputs: [{ name: "_encryptedKey", type: "bytes" }],
+    outputs: [],
   },
   {
     type: "function",
@@ -96,7 +103,7 @@ export type ChainConfig = {
 export function chainConfig(): ChainConfig | null {
   const e = env();
   const instructionSender = (e.VITE_INSTRUCTION_SENDER ||
-    "0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9") as `0x${string}`;
+    "0x23E9d227a2b1741b8e23915D7F7f592f5FEDe36A") as `0x${string}`;
   if (!/^0x[a-fA-F0-9]{40}$/.test(instructionSender)) return null;
   const feeRaw = e.VITE_FEE_WEI || "1000000000000";
   let feeWei: bigint;
@@ -360,13 +367,18 @@ async function finishExtensionId(
 
 /** Operator-sponsored on-chain InstructionSender — user pays $0 gas. */
 export async function sendSponsoredInstruction(opts: {
-  op: "setPolicy" | "sign";
-  message: Hex;
+  op: "setPolicy" | "sign" | "updateKey";
+  /** Required for setPolicy/sign. Optional for updateKey (API encrypts demo vault key). */
+  message?: Hex;
 }): Promise<OnchainInstructionResult> {
   const res = await fetch("/api/instruct", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ op: opts.op, message: opts.message }),
+    body: JSON.stringify(
+      opts.message !== undefined
+        ? { op: opts.op, message: opts.message }
+        : { op: opts.op }
+    ),
   });
   const body = (await res.json().catch(() => ({}))) as {
     error?: string;
@@ -385,6 +397,11 @@ export async function sendSponsoredInstruction(opts: {
     instructionId: body.instructionId,
     explorerTx: body.explorerTx,
   };
+}
+
+/** Load demo vault signing key into the TEE (in-memory; needed after TEE restart). */
+export async function sendUpdateKeyOnchain(): Promise<OnchainInstructionResult> {
+  return sendSponsoredInstruction({ op: "updateKey" });
 }
 
 export async function sendSetPolicyOnchain(opts: {

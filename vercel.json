@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/fcc/:path*",
-      "destination": "https://levy-engaging-bouquet-crystal.trycloudflare.com/:path*"
+      "destination": "https://examinations-domains-proof-cooler.trycloudflare.com/:path*"
     }
   ]
 }

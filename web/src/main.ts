@@ -21,6 +21,7 @@ import {
   classifyAttestation,
   sendSetPolicyOnchain,
   sendSignOnchain,
+  sendUpdateKeyOnchain,
   type TeeAttestationKind,
 } from "./chain";
 import { verifyApproval } from "./verify";
@@ -62,6 +63,8 @@ const SCENARIOS: Record<
 
 const ERRORS: Record<string, string> = {
   "no private key stored": "Vault key is not loaded yet.",
+  "decryption failed": "Could not decrypt vault key for this TEE. Reconnect and lock again.",
+  "invalid private key": "Vault key payload was rejected by the TEE.",
   "policy expired": "These payout rules have ended.",
   "intent deadline passed": "This payout took too long and timed out.",
   "recipient not allowed by policy": "Blocked: that person is not approved.",
@@ -141,6 +144,34 @@ const liveCfg = liveConfig();
 /** App after live vault connect. On-chain Lock/Approve is gas-sponsored (you pay $0). */
 function isAuthed(): boolean {
   return vaultState === "live" && Boolean(liveCfg) && Boolean(chainCfg);
+}
+
+/**
+ * TEE keeps the signing key in memory only — lost on container restart.
+ * Sponsor-encrypts the demo vault key and sends InstructionSender.updateKey.
+ */
+async function ensureVaultKeyLoaded(): Promise<void> {
+  if (!liveCfg) throw new Error("Vault not configured");
+  setStatus(
+    "ok",
+    "Loading vault key",
+    "InstructionSender.updateKey — gas sponsored (you pay $0)…"
+  );
+  const onchain = await sendUpdateKeyOnchain();
+  setStatus(
+    "ok",
+    "Waiting for TEE",
+    `Key tx confirmed · polling ${short(onchain.instructionId)}`
+  );
+  const res = await pollInstructionResult({
+    baseUrl: liveCfg.baseUrl,
+    instructionId: onchain.instructionId,
+    timeoutMs: 180_000,
+  });
+  if (res.status !== 1) {
+    const log = (res.log ?? "Key load refused.").replace(/^error:\s*/i, "");
+    throw new Error(ERRORS[log] ?? log);
+  }
 }
 
 function refreshSessionChrome() {
@@ -352,6 +383,27 @@ function humanizeError(err: unknown): {
     return {
       title: "Sponsor offline",
       body: "Set SPONSOR_PRIVATE_KEY on the host (funded Coston2 key). You should not pay gas in the product path.",
+      tech,
+    };
+  }
+  if (
+    lower.includes("returned no data") ||
+    lower.includes('returned no data ("0x")')
+  ) {
+    return {
+      title: "Contract ABI mismatch",
+      body: "InstructionSender simulation expected a return value the contract does not provide. Hard-refresh and retry; if it persists, redeploy the web app.",
+      tech,
+    };
+  }
+  if (
+    lower.includes("toomany") ||
+    lower.includes("0xd65ac61e") ||
+    lower.includes("no production tee")
+  ) {
+    return {
+      title: "Vault offline on-chain",
+      body: "No production TEE is registered for this extension. Keep the local TEE + public tunnel up, run tee/scripts/post-build.sh, then retry Lock.",
       tech,
     };
   }
@@ -962,12 +1014,13 @@ setPolicyBtn.addEventListener("click", async () => {
 
   policyLocking = true;
   sync();
-  setStatus(
-    "ok",
-    "Submitting on-chain",
-    "InstructionSender.setPolicy — gas sponsored (you pay $0)…"
-  );
   try {
+    await ensureVaultKeyLoaded();
+    setStatus(
+      "ok",
+      "Submitting on-chain",
+      "InstructionSender.setPolicy — gas sponsored (you pay $0)…"
+    );
     const onchain = await sendSetPolicyOnchain({
       policyBytes: encodePolicy(next),
       walletClient,
@@ -1041,6 +1094,8 @@ trySignBtn.addEventListener("click", async () => {
     const probe = await probeVault(liveCfg.baseUrl, 3000);
     if (probe.vaultAddress) vaultAddress = probe.vaultAddress;
     attestationKind = classifyAttestation(probe.info);
+
+    await ensureVaultKeyLoaded();
 
     setStatus(
       "ok",

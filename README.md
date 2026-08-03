@@ -1,328 +1,112 @@
 <p align="center">
-  <img src="docs/logo-mark.png" alt="CipherSign" width="88" height="88" />
+  <img src="docs/logo-mark.svg" alt="CipherSign" width="72" height="72" />
 </p>
 
 <h1 align="center">CipherSign</h1>
 
 <p align="center">
-  <em>Flare · Confidential Compute</em><br/>
-  <strong>Stop overpay and wrong-person payouts.</strong>
+  <strong>Policy-gated payouts. Key stays in a Flare TEE.</strong><br/>
+  Allowlist, spending limit, and expiry are enforced before any signature.
 </p>
 
 <p align="center">
-  For teams that send fees, payroll, or rewards.<br/>
-  Keys stay in a Flare TEE. Allowlist + spending limit enforced before any signature.
-</p>
-
-<p align="center">
-  <a href="https://cipher-sign.vercel.app">
-    <img src="docs/app-hero.png" alt="CipherSign live app — Live TEE, product bar, FAssets vault" width="920" />
-  </a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Live%20TEE-30d158?style=for-the-badge&labelColor=0B0B12" alt="Live TEE" />
-  <img src="https://img.shields.io/badge/App-cipher--sign.vercel.app-8B5CF6?style=for-the-badge&labelColor=0B0B12" alt="App" />
-  <img src="https://img.shields.io/badge/Tests-29%2F29-30d158?style=for-the-badge&labelColor=0B0B12" alt="Tests" />
+  <a href="https://cipher-sign.vercel.app"><strong>cipher-sign.vercel.app</strong></a>
+  ·
+  <a href="https://coston2-explorer.flare.network/address/0x23E9d227a2b1741b8e23915D7F7f592f5FEDe36A">Coston2 contract</a>
 </p>
 
 ---
 
-## The product
+## What it is
 
-A hot wallet signs anything you ask. That is fine for demos — and fatal for payout automation.
+Hot wallets sign whatever you ask. That works for demos and drains treasuries in production.
 
-**CipherSign** holds the key inside a Flare TEE. Every signature request is gated by a locked policy **in the enclave**, not in a mutable backend:
+CipherSign holds the signing key inside a **Flare Confidential Compute** TEE. Ops teams lock who can get paid and how much; every payout intent is checked **inside the enclave** before ECDSA runs.
 
-| Rule | What it stops |
-|------|----------------|
-| **Allowlist** | Payments to unknown recipients |
-| **Max amount** | Overspend / drain |
-| **Expiry** | Forever-valid keys |
+| Rule | Blocks |
+|------|--------|
+| Allowlist | Wrong-person / poisoned address |
+| Max amount | Overspend / script bugs |
+| Expiry | Forever-valid automation keys |
 
-Break the rules → **no signature**. Period.
+Break a rule → **no signature**. The key never leaves the vault.
 
-### Built for finance & ops teams
+### Built for
 
-| Use case | Job |
-|----------|-----|
-| **Fee payouts** | Only approved fee wallets, under a hard limit |
-| **Team payroll** | Pay approved people — never above the cap |
+| Mode | Job |
+|------|-----|
+| **Fee payouts** | Approved fee wallets only, under a hard cap |
+| **Team payroll** | Pay approved people — never above the limit |
 | **Rewards** | Partner rewards only to locked payout wallets |
 
-Product brief & market notes: [docs/PRODUCT.md](docs/PRODUCT.md)
+---
+
+## Use the live app
+
+1. Open [cipher-sign.vercel.app](https://cipher-sign.vercel.app)
+2. **Connect** the vault (operator TEE must be online)
+3. Pick Fees / Payroll / Rewards → set allowlist + limit → **Lock rules on-chain**
+4. **Approve** a payout under the rules — or try over-limit / wrong address and watch the TEE refuse
+
+Gas for Lock / Approve is **operator-sponsored** on Coston2 (you pay $0). Explorer tx + recovered vault signer are shown in-app after a successful approval.
 
 ---
 
-## Try it (wallet + live vault required)
+## How it works
 
-1. Open **[cipher-sign.vercel.app](https://cipher-sign.vercel.app)** with the operator vault online  
-2. **Connect wallet** (MetaMask on Coston2) → Fees / Payroll / Rewards → **Lock rules on-chain**  
-3. **Approve on-chain** — MetaMask tx to `InstructionSender`, then explorer link + vault signature verify  
-4. Try **Over the limit** / **Wrong person** — TEE blocks after the on-chain instruction  
+```text
+Browser  →  InstructionSender (Coston2)
+         →  FlareTeeManager diamond
+         →  CipherSign TEE extension
+              UPDATE   load vault key (ECIES)
+              SET_POLICY   lock allowlist · max · expiry
+              SIGN         ECDSA only if intent passes
+```
 
-Product path is **InstructionSender**, not `/direct`. Hardware TEE = GCP Confidential Space — see [docs/PRODUCTION.md](docs/PRODUCTION.md).
+Policy and key live in enclave memory. Restarting the TEE clears the key; the live app reloads it via sponsored `updateKey` before Lock / Approve.
+
+Deeper design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRODUCT.md](docs/PRODUCT.md)
 
 ---
 
-## How it uses Flare
-
-### System architecture
-
-```mermaid
-flowchart TB
-  subgraph Clients["Operators today"]
-    FA[FAssets executor]
-    BOT[Keeper / bot]
-    FTSO[FTSO forwarder]
-  end
-
-  subgraph Product["CipherSign product"]
-    UI["Web vault<br/>Live TEE only"]
-    UI -->|POST /direct<br/>or on-chain txs| SENDER
-  end
-
-  subgraph Coston2["Flare Coston2 · chain 114"]
-    SENDER["InstructionSender.sol<br/>0x79bB…0Ee9"]
-    REG["TeeExtensionRegistry"]
-    SENDER -->|sendInstructions| REG
-  end
-
-  subgraph FCC["Flare Confidential Compute"]
-    PROXY["ext-proxy · :6674"]
-    REG -.->|route to registered machine| PROXY
-    UI -.->|Live path /fcc → /direct| PROXY
-    PROXY --> TEE
-
-    subgraph TEE["CipherSign TEE extension"]
-      UPD["KEY / UPDATE<br/>key sealed in enclave"]
-      POL["KEY / SET_POLICY<br/>allowlist · max · expiry"]
-      SIGN["KEY / SIGN<br/>intent check + ECDSA"]
-      UPD --> POL --> SIGN
-    end
-  end
-
-  FA --> UI
-  BOT --> UI
-  FTSO --> UI
-
-  SIGN -->|policy OK| SIG["ECDSA signature"]
-  SIGN -->|overspend / wrong addr / expired| REJ["Reject — key never used"]
-```
-
-### Policy gate (inside the enclave)
-
-```mermaid
-flowchart LR
-  I[SIGN intent] --> K{Key loaded?}
-  K -->|no| R1[Reject]
-  K -->|yes| P{Policy locked?}
-  P -->|no| R2[Reject]
-  P -->|yes| E{Expired?}
-  E -->|yes| R3[Reject]
-  E -->|no| A{Recipient<br/>allowlisted?}
-  A -->|no| R4[Reject]
-  A -->|yes| M{Amount ≤ max?}
-  M -->|no| R5[Reject]
-  M -->|yes| S[ECDSA sign]
-```
-
-### Ops sequence
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant Ops as Operator / bot
-  participant App as CipherSign UI
-  participant Proxy as FCC ext-proxy
-  participant TEE as CipherSign TEE
-  participant Chain as Coston2 registries
-
-  Ops->>App: Lock FAssets / Bot / FTSO policy
-  App->>Proxy: KEY/SET_POLICY via /direct
-  Proxy->>TEE: enforce in enclave memory
-  TEE-->>App: policy locked
-
-  Ops->>App: Sign valid payout
-  App->>Proxy: KEY/SIGN
-  TEE->>TEE: allowlist + cap + expiry
-  TEE-->>App: ECDSA signature
-
-  Ops->>App: Overspend / Wrong addr
-  App->>Proxy: KEY/SIGN
-  TEE-->>App: reject — no key use
-
-  Note over App,Chain: On-chain path: InstructionSender → TeeExtensionRegistry → same TEE ops
-```
-
-Enclave ops:
-
-1. `KEY / UPDATE` — create the signing key inside the TEE  
-2. `KEY / SET_POLICY` — lock allowlist, max amount, expiry  
-3. `KEY / SIGN` — release ECDSA only if the intent passes  
-
-Removing Flare removes the **attested TEE + registry** trust model. A normal server can silently change policy or exfiltrate keys.
-
----
-
-## On-chain proof (Coston2)
+## On-chain (Coston2)
 
 | | |
 |---|---|
 | Network | Flare Testnet Coston2 (`114`) |
-| InstructionSender | [`0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9`](https://coston2-explorer.flare.network/address/0x79bB3e509B6a0f43d506a761Fb022221c3FF0Ee9) |
-| EXTENSION_ID | `0x…0665` |
-| Deployer | `0xc73Be03499616FFaA79315673e620AACfbb920C4` |
+| InstructionSender | [`0x23E9d227a2b1741b8e23915D7F7f592f5FEDe36A`](https://coston2-explorer.flare.network/address/0x23E9d227a2b1741b8e23915D7F7f592f5FEDe36A) |
+| Extension ID | `65907` (`0x…010173`) |
+| FlareTeeManager | [`0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE`](https://coston2-explorer.flare.network/address/0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE) |
 
 ---
 
-## Why this wins Bounty 2
+## Stack
 
-| Criterion | CipherSign |
-|-----------|------------|
-| **Useful** | Real Flare jobs — FAssets fees, bots, FTSO forwarders |
-| **Flare-native** | InstructionSender → registry → attested TEE extension |
-| **Technical** | Policy-gated `SIGN`, 29/29 tests, attack buttons that fail closed |
-| **New work** | Allowlist model + Live product UI — not Hello World |
-| **Clarity** | One live URL, one vault, one story |
+| Layer | Path |
+|-------|------|
+| Product UI | `web/` (Vite + viem) |
+| Sponsor API | `api/instruct.js` (operator pays C2FLR) |
+| TEE extension | `tee/typescript/` (policy handlers) |
+| Deploy / register tools | `tee/go/tools/` + `tee/scripts/` |
+| Contracts | `tee/contracts/InstructionSender.sol` |
 
 ```bash
-cd web && npm ci && npm run dev          # product UI
-cd tee/typescript && npm test            # 29/29
+# UI (proxies /fcc → local TEE :6674)
+cd web && npm ci && npm run dev
+
+# Extension unit tests
+cd tee/typescript && npm ci && npm test
+
+# Full FCC stack (Docker) — see docs/SETUP.md
+cd tee && cp .env.example .env   # fill keys
+docker compose up -d
+./scripts/pre-build.sh && ./scripts/post-build.sh
 ```
 
-Docs: [Architecture](docs/ARCHITECTURE.md) · [Setup](docs/SETUP.md) · [Demo script](docs/DEMO_SCRIPT.md) · [Submission](docs/SUBMISSION.md)
-
----
-
-## Project structure
-
-Exact match to files tracked in this repository:
-
-```text
-cipher-sign/
-├── .github/
-│   └── workflows/
-│       └── build-demo.yml
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── DEMO_SCRIPT.md
-│   ├── DORAHACKS_PASTE.md
-│   ├── FEEDBACK.md
-│   ├── SETUP.md
-│   ├── SUBMISSION.md
-│   ├── app-hero.png
-│   ├── ciphersign-logo-480.png
-│   ├── ciphersign-logo-480.svg
-│   ├── logo-mark.png
-│   ├── logo-mark.svg
-│   └── logo.svg
-├── tee/
-│   ├── .env.example
-│   ├── .gitignore
-│   ├── README.md
-│   ├── docker-compose.yaml
-│   ├── config/
-│   │   ├── coston2/
-│   │   │   └── deployed-addresses.json
-│   │   └── proxy/
-│   │       ├── extension_proxy.toml.example
-│   │       ├── extension_proxy.coston2.toml.example
-│   │       └── extension_proxy.coston2.docker.toml.example
-│   ├── contract/
-│   │   ├── InstructionSender.sol
-│   │   ├── foundry.toml
-│   │   └── interface/
-│   │       ├── ITeeExtensionRegistry.sol
-│   │       └── ITeeMachineRegistry.sol
-│   ├── proxy/
-│   │   └── Dockerfile
-│   ├── scripts/
-│   │   ├── full-setup.sh
-│   │   ├── generate-bindings.sh
-│   │   ├── post-build.sh
-│   │   ├── pre-build.sh
-│   │   ├── start-services.sh
-│   │   ├── stop-services.sh
-│   │   ├── test-direct.sh
-│   │   └── test.sh
-│   ├── typescript/                    # CipherSign TEE extension (primary)
-│   │   ├── Dockerfile
-│   │   ├── README.md
-│   │   ├── package.json
-│   │   ├── package-lock.json
-│   │   ├── tsconfig.json
-│   │   ├── vitest.config.ts
-│   │   └── src/
-│   │       ├── main.ts
-│   │       ├── app/
-│   │       │   ├── abi.ts
-│   │       │   ├── config.ts
-│   │       │   ├── crypto.ts
-│   │       │   └── handlers.ts      # KEY/UPDATE, SET_POLICY, SIGN
-│   │       ├── base/
-│   │       │   ├── crypto.ts
-│   │       │   ├── encoding.ts
-│   │       │   ├── server.ts
-│   │       │   └── types.ts
-│   │       └── __tests__/
-│   │           ├── abi.test.ts
-│   │           ├── base-crypto.test.ts
-│   │           ├── crypto.test.ts
-│   │           ├── encoding.test.ts
-│   │           └── handlers.test.ts
-│   └── go/                            # upstream FCC Go scaffold + tools
-│       ├── Dockerfile
-│       ├── README.md
-│       ├── go.mod
-│       ├── go.sum
-│       ├── main.go
-│       ├── cmd/docker/main.go
-│       ├── internal/
-│       │   ├── app/                   # abi, config, crypto, handlers, types (+ tests)
-│       │   └── base/                  # crypto, encoding, server, types (+ tests)
-│       └── tools/
-│           ├── go.mod
-│           ├── go.sum
-│           ├── app/                   # deploy, generate, test + InstructionSender bindings
-│           ├── base/                  # configs, support, hints, fccutils/
-│           └── cmd/
-│               ├── allow-tee-version/
-│               ├── deploy-contract/
-│               ├── register-extension/
-│               ├── register-tee/
-│               ├── run-test/
-│               └── run-test-direct/
-├── web/                               # Live product UI
-│   ├── .env.example
-│   ├── .gitignore
-│   ├── index.html
-│   ├── live-direct-smoke.mjs
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── tsconfig.json
-│   ├── vercel.json
-│   ├── vite.config.ts
-│   ├── public/
-│   │   ├── bg-glow.png
-│   │   ├── favicon.svg
-│   │   ├── logo-mark.png
-│   │   ├── logo-mark.svg
-│   │   └── logo.svg
-│   └── src/
-│       ├── fcc.ts
-│       ├── main.ts
-│       └── style.css
-├── .gitignore
-├── LICENSE
-├── README.md
-└── vercel.json
-```
-
-Product code paths: **`web/`** and **`tee/typescript/`**. `tee/go` is upstream Flare FCC scaffold and deploy/register tools.
+Operator runbook: [docs/SETUP.md](docs/SETUP.md) · [docs/PRODUCTION.md](docs/PRODUCTION.md)
 
 ---
 
 ## License
 
-MIT — [LICENSE](LICENSE). Upstream FCC scaffold © Flare Foundation.
+MIT — [LICENSE](LICENSE). Upstream FCC components © Flare Foundation.

@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
+    "ecies-geth": "^1.8.0",
     "viem": "^2.55.4"
   }
 }
